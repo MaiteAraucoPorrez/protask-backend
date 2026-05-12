@@ -13,12 +13,16 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const user = await this.usersService.create(dto);
+    // create() devuelve ApiResponse<UserResponseDto>, sacamos .data
+    const response = await this.usersService.create(dto);
+    const user = response.data;
+
     const token = this.jwtService.sign({
       sub: user.id,
       email: user.email,
       role: user.role,
     });
+
     return {
       message: 'Usuario registrado exitosamente',
       token,
@@ -29,13 +33,16 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
+
     const match = await bcrypt.compare(dto.password, user.password);
     if (!match) throw new UnauthorizedException('Credenciales inválidas');
+
     const token = this.jwtService.sign({
       sub: user.id,
       email: user.email,
       role: user.role,
     });
+
     return {
       message: 'Inicio de sesión exitoso',
       token,
