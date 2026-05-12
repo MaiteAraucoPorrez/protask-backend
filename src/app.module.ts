@@ -4,10 +4,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
+    // ── Config ──────────────────────────────────────────────────
     ConfigModule.forRoot({ isGlobal: true }),
+
+    // ── Database ─────────────────────────────────────────────────
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -18,12 +22,16 @@ import { AuthModule } from './auth/auth.module';
         password: config.get('DATABASE_PASSWORD'),
         database: config.get('DATABASE_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true,
+        synchronize: config.get('NODE_ENV') !== 'production', // Never true in prod!
+        logging: config.get('NODE_ENV') === 'development',
       }),
     }),
+
+    // ── Feature Modules ──────────────────────────────────────────
     AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
