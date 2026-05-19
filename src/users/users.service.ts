@@ -289,6 +289,27 @@ export class UsersService {
       'Usuario verificado exitosamente',
     );
   }
+  async addPortfolioFile(
+      id: string,
+      filePath: string,
+      requesterId: string,
+  ): Promise<ApiResponse<UserResponseDto>> {
+    const user = await this.findByIdOrFail(id);
+    if (requesterId !== id) {
+      throw new ForbiddenException('No tienes permisos para editar el portafolio de este usuario');
+    }
+    if (!user.portfolioFiles) {
+      user.portfolioFiles = [];
+    }
+    user.portfolioFiles.push(filePath.replace(/\\/g, '/'));
+
+    const updated = await this.usersRepository.save(user);
+
+    return ApiResponse.success(
+        new UserResponseDto(updated),
+        'Archivo agregado al portafolio del perfil exitosamente',
+    );
+  }
 
   // ─────────────────────────────────────────────────────────────
   // Internal helpers

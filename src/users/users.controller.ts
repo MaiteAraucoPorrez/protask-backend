@@ -13,7 +13,18 @@ import {
     HttpStatus,
     ParseUUIDPipe,
     Req,
+    /////////////////
+    UseInterceptors,
+    UploadedFile,
+    BadRequestException,
+    ////////////////
 } from '@nestjs/common';
+///////////////////////////////////////////////////
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { Request } from 'express';
+///////////////////////////////////////////////
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -22,7 +33,6 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard, JwtPayload } from '../common/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../common/guards/roles.guard';
 import { UserRole } from './entities/user.entity';
-import { Request } from 'express';
 
 @Controller('users')
 export class UsersController {
@@ -96,7 +106,36 @@ export class UsersController {
             requester.role as UserRole,
         );
     }
+    ///////////////////////////////////
+    @Post(':id/portfolio')
+    @UseGuards(JwtAuthGuard)
+    @UseInterceptors(
+        FileInterceptor('file', {
+            storage: diskStorage({
+                destination: './uploads/portfolios',
+                filename: (req, file, callback) => {
+                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                    const ext = extname(file.originalname);
+                    callback(null, `portfolio-${uniqueSuffix}${ext}`);
+                },
+            }),
+            limits: { fileSize: 5 * 1024 * 1024 },
+        }),
+    )
+    uploadPortfolioFile(
+        @Param('id', ParseUUIDPipe) id: string,
+        @UploadedFile() file: any,
+        @Req() req: Request,
+    ) {
+        if (!file) {
+                throw new BadRequestException('No files were given');
+        }
 
+        const requester = (req as any).user as JwtPayload;
+
+        return this.usersService.addPortfolioFile(id, file.path, requester.sub);
+    }
+    //////////////////////////////////
     // ─────────────────────────────────────────────────────────────
     // PATCH /users/:id/password  →  Change password
     // ─────────────────────────────────────────────────────────────
