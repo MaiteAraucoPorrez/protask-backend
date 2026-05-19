@@ -5,15 +5,21 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { ProjectsModule } from './projects/projects.module';
+
+
 
 @Module({
   imports: [
     // ── Config ──────────────────────────────────────────────────
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ 
+  isGlobal: true,
+  envFilePath: '.env',  //
+}),
 
     // ── Database ─────────────────────────────────────────────────
     TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
+      inject: [ConfigService],  
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         host: config.get('DATABASE_HOST'),
@@ -30,6 +36,7 @@ import { UsersModule } from './users/users.module';
     // ── Feature Modules ──────────────────────────────────────────
     AuthModule,
     UsersModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
