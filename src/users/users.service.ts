@@ -8,6 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, FindOptionsWhere } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import * as fs from 'fs'; //Importación nativa para manejar archivos físicos en el disco
 import { User, UserRole, UserStatus } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -22,15 +23,15 @@ import { UserResponseDto } from './dto/user-response.dto';
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+      @InjectRepository(User)
+      private readonly usersRepository: Repository<User>,
   ) { }
 
   // ─────────────────────────────────────────────────────────────
   // GET ALL with filters + pagination
   // ─────────────────────────────────────────────────────────────
   async findAll(
-    query: UserQueryDto,
+      query: UserQueryDto,
   ): Promise<ApiResponse<UserResponseDto[]>> {
     const {
       page = 1,
@@ -66,9 +67,9 @@ export class UsersService {
     }
 
     queryBuilder
-      .orderBy('user.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
+        .orderBy('user.createdAt', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit);
 
     const [items, totalCount] = await queryBuilder.getManyAndCount();
 
@@ -85,9 +86,9 @@ export class UsersService {
     const data = items.map((u) => new UserResponseDto(u));
 
     return ApiResponse.info(
-      data,
-      `Se recuperaron ${items.length} usuarios correctamente`,
-      pagination,
+        data,
+        `Se recuperaron ${items.length} usuarios correctamente`,
+        pagination,
     );
   }
 
@@ -97,8 +98,8 @@ export class UsersService {
   async findOne(id: string): Promise<ApiResponse<UserResponseDto>> {
     const user = await this.findByIdOrFail(id);
     return ApiResponse.info(
-      new UserResponseDto(user),
-      'Usuario recuperado exitosamente',
+        new UserResponseDto(user),
+        'Usuario recuperado exitosamente',
     );
   }
 
@@ -106,7 +107,7 @@ export class UsersService {
   // GET freelancers only (public endpoint)
   // ─────────────────────────────────────────────────────────────
   async findFreelancers(
-    query: UserQueryDto,
+      query: UserQueryDto,
   ): Promise<ApiResponse<UserResponseDto[]>> {
     query.role = UserRole.FREELANCER;
     return this.findAll(query);
@@ -116,23 +117,20 @@ export class UsersService {
   // CREATE
   // ─────────────────────────────────────────────────────────────
   async create(dto: CreateUserDto): Promise<ApiResponse<UserResponseDto>> {
-    // Check duplicate email
     const existing = await this.usersRepository.findOneBy({ email: dto.email });
     if (existing) {
       throw new ConflictException('Ya existe un usuario con ese email');
     }
 
-    // Business rule: hourlyRate only for freelancers
     if (dto.hourlyRate !== undefined && dto.role !== UserRole.FREELANCER) {
       throw new BadRequestException(
-        'La tarifa por hora solo aplica para freelancers',
+          'La tarifa por hora solo aplica para freelancers',
       );
     }
 
-    // Business rule: skills only for freelancers
     if (dto.skills?.length && dto.role !== UserRole.FREELANCER) {
       throw new BadRequestException(
-        'Las habilidades solo aplican para freelancers',
+          'Las habilidades solo aplican para freelancers',
       );
     }
 
@@ -150,8 +148,8 @@ export class UsersService {
     const saved = await this.usersRepository.save(user);
 
     return ApiResponse.success(
-      new UserResponseDto(saved),
-      'Usuario creado exitosamente',
+        new UserResponseDto(saved),
+        'Usuario creado exitosamente',
     );
   }
 
@@ -159,19 +157,17 @@ export class UsersService {
   // UPDATE
   // ─────────────────────────────────────────────────────────────
   async update(
-    id: string,
-    dto: UpdateUserDto,
-    requesterId: string,
-    requesterRole: UserRole,
+      id: string,
+      dto: UpdateUserDto,
+      requesterId: string,
+      requesterRole: UserRole,
   ): Promise<ApiResponse<UserResponseDto>> {
     const user = await this.findByIdOrFail(id);
 
-    // Only admin or the user themselves can update
     if (requesterRole !== UserRole.ADMIN && requesterId !== id) {
       throw new ForbiddenException('No tienes permisos para editar este usuario');
     }
 
-    // Check email uniqueness if changed
     if (dto.email && dto.email !== user.email) {
       const emailExists = await this.usersRepository.findOneBy({
         email: dto.email,
@@ -181,10 +177,9 @@ export class UsersService {
       }
     }
 
-    // Only admin can suspend/activate
     if (dto.status && requesterRole !== UserRole.ADMIN) {
       throw new ForbiddenException(
-        'Solo un administrador puede cambiar el estado del usuario',
+          'Solo un administrador puede cambiar el estado del usuario',
       );
     }
 
@@ -192,8 +187,8 @@ export class UsersService {
     const updated = await this.usersRepository.save(user);
 
     return ApiResponse.success(
-      new UserResponseDto(updated),
-      'Usuario actualizado exitosamente',
+        new UserResponseDto(updated),
+        'Usuario actualizado exitosamente',
     );
   }
 
@@ -201,22 +196,21 @@ export class UsersService {
   // CHANGE PASSWORD
   // ─────────────────────────────────────────────────────────────
   async changePassword(
-    id: string,
-    dto: ChangePasswordDto,
-    requesterId: string,
+      id: string,
+      dto: ChangePasswordDto,
+      requesterId: string,
   ): Promise<ApiResponse<null>> {
     if (requesterId !== id) {
       throw new ForbiddenException(
-        'Solo puedes cambiar tu propia contraseña',
+          'Solo puedes cambiar tu propia contraseña',
       );
     }
 
-    // Must fetch with password (select: false on entity)
     const user = await this.usersRepository
-      .createQueryBuilder('user')
-      .addSelect('user.password')
-      .where('user.id = :id', { id })
-      .getOne();
+        .createQueryBuilder('user')
+        .addSelect('user.password')
+        .where('user.id = :id', { id })
+        .getOne();
 
     if (!user) throw new NotFoundException('Usuario no encontrado');
 
@@ -227,7 +221,7 @@ export class UsersService {
 
     if (dto.currentPassword === dto.newPassword) {
       throw new BadRequestException(
-        'La nueva contraseña no puede ser igual a la actual',
+          'La nueva contraseña no puede ser igual a la actual',
       );
     }
 
@@ -241,18 +235,17 @@ export class UsersService {
   // DELETE (soft delete via status)
   // ─────────────────────────────────────────────────────────────
   async remove(
-    id: string,
-    requesterRole: UserRole,
+      id: string,
+      requesterRole: UserRole,
   ): Promise<ApiResponse<null>> {
     if (requesterRole !== UserRole.ADMIN) {
       throw new ForbiddenException(
-        'Solo un administrador puede eliminar usuarios',
+          'Solo un administrador puede eliminar usuarios',
       );
     }
 
     const user = await this.findByIdOrFail(id);
 
-    // Soft delete: mark as inactive instead of physical delete
     user.status = UserStatus.INACTIVE;
     await this.usersRepository.save(user);
 
@@ -263,12 +256,12 @@ export class UsersService {
   // VERIFY USER (admin action)
   // ─────────────────────────────────────────────────────────────
   async verify(
-    id: string,
-    requesterRole: UserRole,
+      id: string,
+      requesterRole: UserRole,
   ): Promise<ApiResponse<UserResponseDto>> {
     if (requesterRole !== UserRole.ADMIN) {
       throw new ForbiddenException(
-        'Solo un administrador puede verificar usuarios',
+          'Solo un administrador puede verificar usuarios',
       );
     }
 
@@ -285,10 +278,14 @@ export class UsersService {
     const updated = await this.usersRepository.save(user);
 
     return ApiResponse.success(
-      new UserResponseDto(updated),
-      'Usuario verificado exitosamente',
+        new UserResponseDto(updated),
+        'Usuario verificado exitosamente',
     );
   }
+
+  // ─────────────────────────────────────────────────────────────
+  // ADD PORTFOLIO FILE (POST) - HU-F03
+  // ─────────────────────────────────────────────────────────────
   async addPortfolioFile(
       id: string,
       filePath: string,
@@ -312,14 +309,96 @@ export class UsersService {
   }
 
   // ─────────────────────────────────────────────────────────────
+  // UPDATE/REPLACE PORTFOLIO FILE (PUT) - HU-F07
+  // ─────────────────────────────────────────────────────────────
+  async updatePortfolioFile(
+      id: string,
+      oldPath: string,
+      newPath: string,
+      requesterId: string,
+  ): Promise<ApiResponse<UserResponseDto>> {
+    const user = await this.findByIdOrFail(id);
+
+    if (requesterId !== id) {
+      throw new ForbiddenException('No tienes permisos para modificar este portafolio');
+    }
+
+    const normalizedNewPath = newPath.replace(/\\/g, '/');
+
+    if (!user.portfolioFiles) {
+      user.portfolioFiles = [];
+    }
+
+    const fileExistsInProfile = user.portfolioFiles.includes(oldPath);
+    if (!fileExistsInProfile) {
+      if (fs.existsSync(normalizedNewPath)) {
+        fs.unlinkSync(normalizedNewPath);
+      }
+      throw new BadRequestException('El archivo viejo especificado no pertenece al portafolio de este usuario');
+    }
+    user.portfolioFiles = user.portfolioFiles.map(path => path === oldPath ? normalizedNewPath : path);
+
+    if (fs.existsSync(oldPath)) {
+      try {
+        fs.unlinkSync(oldPath);
+      } catch (err) {
+        console.error(`No se pudo eliminar el archivo físico viejo en: ${oldPath}`, err);
+      }
+    }
+
+    const updated = await this.usersRepository.save(user);
+
+    return ApiResponse.success(
+        new UserResponseDto(updated),
+        'Archivo de portafolio actualizado y reemplazado exitosamente',
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // DELETE PORTFOLIO FILE (Opcional - Completar CRUD)
+  // ─────────────────────────────────────────────────────────────
+  async deletePortfolioFile(
+      id: string,
+      filePath: string,
+      requesterId: string,
+  ): Promise<ApiResponse<UserResponseDto>> {
+    const user = await this.findByIdOrFail(id);
+
+    if (requesterId !== id) {
+      throw new ForbiddenException('No tienes permisos para eliminar archivos de este portafolio');
+    }
+
+    if (!user.portfolioFiles || !user.portfolioFiles.includes(filePath)) {
+      throw new BadRequestException('El archivo especificado no existe en el portafolio del usuario');
+    }
+
+    user.portfolioFiles = user.portfolioFiles.filter(path => path !== filePath);
+
+    if (fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (err) {
+        console.error(`No se pudo eliminar el archivo físico en: ${filePath}`, err);
+      }
+    }
+
+    const updated = await this.usersRepository.save(user);
+
+    return ApiResponse.success(
+        new UserResponseDto(updated),
+        'Archivo eliminado del portafolio exitosamente',
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // Internal helpers
   // ─────────────────────────────────────────────────────────────
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository
-      .createQueryBuilder('user')
-      .addSelect('user.password')
-      .where('user.email = :email', { email })
-      .getOne();
+        .createQueryBuilder('user')
+        .addSelect('user.password')
+        .where('user.email = :email', { email })
+        .getOne();
   }
 
   async findById(id: string): Promise<User | null> {

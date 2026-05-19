@@ -24,7 +24,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Request } from 'express';
-///////////////////////////////////////////////
+///////////////////////////////////////////////////
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -135,7 +135,42 @@ export class UsersController {
 
         return this.usersService.addPortfolioFile(id, file.path, requester.sub);
     }
-    //////////////////////////////////
+
+    //Put/Patch HISTORIA USUARIO 07
+
+    @Put(':id/portfolio')
+    @UseGuards(JwtAuthGuard)
+    @UseInterceptors(
+        FileInterceptor('file', {
+            storage: diskStorage({
+                destination: './uploads/portfolios',
+                filename: (req, file, callback) => {
+                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+                    const ext = extname(file.originalname);
+                    callback(null, `portfolio-${uniqueSuffix}${ext}`);
+                },
+            }),
+            limits: { fileSize: 5 * 1024 * 1024 },
+        }),
+    )
+    async updatePortfolioFile(
+        @Param('id', ParseUUIDPipe) id: string,
+        @UploadedFile() file: any,
+        @Body('oldFilePath') oldFilePath: string,
+        @Req() req: Request,
+    ) {
+        if (!file) {
+            throw new BadRequestException('No se proporcionó el archivo nuevo');
+        }
+        if (!oldFilePath) {
+            throw new BadRequestException('Debe especificar la ruta del archivo viejo a reemplazar (oldFilePath)');
+        }
+
+        const requester = (req as any).user as JwtPayload;
+
+        return this.usersService.updatePortfolioFile(id, oldFilePath, file.path, requester.sub);
+    }
+    ///////////////////////////////////////////////////////////////
     // ─────────────────────────────────────────────────────────────
     // PATCH /users/:id/password  →  Change password
     // ─────────────────────────────────────────────────────────────
