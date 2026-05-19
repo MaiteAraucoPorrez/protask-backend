@@ -8,7 +8,7 @@ import { AuthModule } from '../auth/auth.module';  // ← Importa AuthModule
 @Module({
   imports: [
     TypeOrmModule.forFeature([Project]),
-    AuthModule,  // ← Cambia JwtModule.register({}) por AuthModule
+    AuthModule,  
   ],
   controllers: [ProjectsController],
   providers: [ProjectsService],
