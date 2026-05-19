@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ProjectsModule } from './projects/projects.module';
+import { ProposalsModule } from './proposal/proposals.module';
 
 
 
@@ -42,6 +43,7 @@ import { ProjectsModule } from './projects/projects.module';
     AuthModule,
     UsersModule,
     ProjectsModule,
+    ProposalsModule,
   ],
   controllers: [AppController],
   providers: [
