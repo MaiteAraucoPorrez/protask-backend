@@ -2,13 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
-  app.use(helmet());
 
   // Global prefix
   app.setGlobalPrefix('api');
@@ -16,16 +12,16 @@ async function bootstrap() {
   // Global validation pipe (DTOs)
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
+      whitelist: true,           // Strip unknown properties
+      forbidNonWhitelisted: true, // Throw error on unknown properties
+      transform: true,           // Auto-transform to DTO types
       transformOptions: {
-        enableImplicitConversion: true,
+        enableImplicitConversion: true, // Allow query param type coercion
       },
     }),
   );
 
-  // Global exception filter
+  // Global exception filter (same pattern as C# GlobalExceptionFilter)
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   // CORS
