@@ -12,8 +12,9 @@ export class ProjectsController {
 
   @Post()
   create(@Body() createDto: CreateProjectDto, @Req() req: Request) {
-   
+
     return this.projectsService.create(createDto, (req.user as any));
+
   }
 
   @Get()
@@ -36,5 +37,5 @@ export class ProjectsController {
   remove(@Param('id') id: string, @Req() req: Request) {
     
     return this.projectsService.remove(id, (req.user as any).id);
-  }
+  } 
 }
