@@ -30,6 +30,9 @@ export class Project {
   @CreateDateColumn()
   createdAt!: Date;
 
+  @Column({ default: false })
+  isCorporate!: boolean;
+
   @UpdateDateColumn()
   updatedAt!: Date;
 }

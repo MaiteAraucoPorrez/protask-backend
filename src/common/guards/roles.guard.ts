@@ -27,18 +27,35 @@ export class RolesGuard implements CanActivate {
             [context.getHandler(), context.getClass()],
         );
 
+        console.log('=== ROLES GUARD DEBUG ===');
+        console.log('Roles requeridos:', requiredRoles);
+
         if (!requiredRoles || requiredRoles.length === 0) {
+            console.log(' No se requieren roles específicos');
             return true;
         }
 
-        const { user } = context.switchToHttp().getRequest();
+        const request = context.switchToHttp().getRequest();
+        const user = request.user;
+        
+        console.log('Usuario en request:', user);
+        console.log('  - id:', user?.id);
+        console.log('  - email:', user?.email);
+        console.log('  - role:', user?.role);
+
+        if (!user) {
+            console.log('No hay usuario en la request');
+            throw new ForbiddenException('No hay usuario autenticado');
+        }
 
         if (!requiredRoles.includes(user?.role)) {
+            console.log(`Rol ${user?.role} no está en los roles requeridos: ${requiredRoles}`);
             throw new ForbiddenException(
                 'No tienes permisos para acceder a este recurso',
             );
         }
 
+        console.log('Rol autorizado');
         return true;
     }
 }
