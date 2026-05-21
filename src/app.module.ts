@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ProposalsModule } from './proposal/proposals.module';
+import { KycModule } from './kyc/kyc.module';
 
 
 
@@ -44,6 +45,7 @@ import { ProposalsModule } from './proposal/proposals.module';
     UsersModule,
     ProjectsModule,
     ProposalsModule,
+    KycModule,
   ],
   controllers: [AppController],
   providers: [
