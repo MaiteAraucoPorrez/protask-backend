@@ -10,13 +10,15 @@ export class ProposalsController {
   constructor(private readonly proposalsService: ProposalsService) {}
 
   @Post('project/:projectId')
+  @UseGuards(JwtAuthGuard)
   create(
     @Param('projectId') projectId: string,
     @Body() createDto: CreateProposalDto,
-    @Req() req: Request,
-  ) {
-    return this.proposalsService.create(projectId, createDto, (req.user as any));
-  }
+    @Req() req: Request,)   
+    {
+    const user = (req as any).user;  
+    return this.proposalsService.create(projectId, createDto, user);
+    }
 
   @Get('project/:projectId')
   findByProject(@Param('projectId') projectId: string) {

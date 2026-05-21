@@ -52,43 +52,59 @@ export class KycController {
   // Acepta multipart/form-data con campos: dniFrente, dniDorso, selfieConDni
   // ─────────────────────────────────────────────────────────────
   @Post('enviar')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.FREELANCER)
-  @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.FREELANCER)
+@HttpCode(HttpStatus.CREATED)
+@UseInterceptors(
     FileFieldsInterceptor(
-      [
-        { name: 'dniFrente', maxCount: 1 },
-        { name: 'dniDorso', maxCount: 1 },
-        { name: 'selfieConDni', maxCount: 1 },
-      ],
-      {
-        storage: kycDiskStorage,
-        fileFilter: (_req, file, cb) => {
-          if (!ALLOWED_MIME.includes(file.mimetype)) {
-            return cb(
-              new BadRequestException('Solo se aceptan archivos JPG, PNG o PDF'),
-              false,
-            );
-          }
-          cb(null, true);
+        [
+            { name: 'dniFrente', maxCount: 1 },
+            { name: 'dniDorso', maxCount: 1 },
+            { name: 'selfieConDni', maxCount: 1 },
+        ],
+        {
+            storage: kycDiskStorage,
+            fileFilter: (_req, file, cb) => {
+                if (!ALLOWED_MIME.includes(file.mimetype)) {
+                    return cb(
+                        new BadRequestException('Solo se aceptan archivos JPG, PNG o PDF'),
+                        false,
+                    );
+                }
+                cb(null, true);
+            },
+            limits: { fileSize: MAX_FILE_SIZE },
         },
-        limits: { fileSize: MAX_FILE_SIZE },
-      },
     ),
-  )
-  enviarDocumentos(
+)
+enviarDocumentos(
     @UploadedFiles()
     files: {
-      dniFrente?: Express.Multer.File[];
-      dniDorso?: Express.Multer.File[];
-      selfieConDni?: Express.Multer.File[];
+        dniFrente?: Express.Multer.File[];
+        dniDorso?: Express.Multer.File[];
+        selfieConDni?: Express.Multer.File[];
     },
     @Req() req: Request,
-  ) {
-    const user = (req as any).user as JwtPayload;
-    return this.kycService.enviarDocumentos(user.sub, files ?? {});
-  }
+) {
+    console.log('=== KYC CONTROLLER DEBUG ===');
+    console.log('req.user completo:', (req as any).user);
+    console.log('Archivos recibidos:', {
+        dniFrente: files.dniFrente?.length || 0,
+        dniDorso: files.dniDorso?.length || 0,
+        selfieConDni: files.selfieConDni?.length || 0,
+    });
+    
+    const user = (req as any).user;
+    console.log('User ID:', user?.id);
+    console.log('User role:', user?.role);
+    
+    if (!user) {
+        console.log('No hay usuario en req.user');
+        throw new BadRequestException('Usuario no autenticado');
+    }
+    
+    return this.kycService.enviarDocumentos(user.id, files ?? {});
+}
 
   // ─────────────────────────────────────────────────────────────
   // GET /kyc/mi-estado  →  Freelancer consulta su estado KYC

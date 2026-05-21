@@ -54,8 +54,8 @@ export class UsersController {
     @Get('me')
     @UseGuards(JwtAuthGuard)
     getProfile(@Req() req: Request) {
-        const user = (req as any).user as JwtPayload;
-        return this.usersService.findOne(user.sub);
+        const user = (req as any).user;
+        return this.usersService.findOne(user.id);
     }
 
     // ─────────────────────────────────────────────────────────────

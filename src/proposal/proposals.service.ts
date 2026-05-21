@@ -13,10 +13,21 @@ export class ProposalsService {
     private proposalRepository: Repository<Proposal>,
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
+    @InjectRepository(User) 
+    private usersRepository: Repository<User>,  
   ) {}
 
-  async create(projectId: string, createDto: CreateProposalDto, freelancer: User): Promise<Proposal> {
-    //Verificar que el proyecto existe y cargar la relación con client
+  async create(projectId: string, createDto: CreateProposalDto, freelancerPayload: any): Promise<Proposal> {
+    // Buscar el freelancer completo en la base de datos para obtener isVerified
+    const freelancer = await this.usersRepository.findOne({
+      where: { id: freelancerPayload.id },
+    });
+    
+    if (!freelancer) {
+      throw new NotFoundException('Freelancer no encontrado');
+    }
+
+    // Verificar que el proyecto existe y cargar la relación con client
     const project = await this.projectRepository.findOne({
       where: { id: projectId },
       relations: ['client'],
@@ -36,18 +47,19 @@ export class ProposalsService {
       throw new BadRequestException('Este proyecto ya no está abierto a propuestas');
     }
 
-    // Verificar que el freelancer no sea el mismo que el cliente que publicó
+    // Verificar que el freelancer no sea el mismo que el cliente
     if (project.client.id === freelancer.id) {
       throw new ForbiddenException('No puedes enviar propuesta a tu propio proyecto');
     }
 
-    // 5. Verificación KYC deshabilitada temporalmente
-    // TODO: Activar cuando el módulo de verificación esté listo
-    // if (project.isCorporate && !freelancer.isVerified) {
-    //   throw new ForbiddenException('Perfil no verificado. Debes completar la verificación KYC para postular a proyectos corporativos');
-    // }
+    // Verificación KYC usando el freelancer de la base de datos
+    if (!freelancer.isVerified) {
+      throw new ForbiddenException(
+        'Perfil no verificado. Debes completar la verificación KYC para postular a proyectos'
+      );
+    }
 
-    //Crear la propuesta
+    // Crear la propuesta
     const proposal = this.proposalRepository.create({
       ...createDto,
       project,
