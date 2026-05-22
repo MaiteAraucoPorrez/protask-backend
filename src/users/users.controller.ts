@@ -64,8 +64,8 @@ export class UsersController {
     @Get('me')
     @UseGuards(JwtAuthGuard)
     getProfile(@Req() req: Request) {
-        const user = (req as any).user as JwtPayload;
-        return this.usersService.findOne(user.sub);
+        const user = (req as any).user;
+        return this.usersService.findOne(user.id);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -98,11 +98,11 @@ export class UsersController {
         @Body() dto: UpdateUserDto,
         @Req() req: Request,
     ) {
-        const requester = (req as any).user as JwtPayload;
+        const requester = (req as any).user;
         return this.usersService.update(
             id,
             dto,
-            requester.sub,
+            requester.id,
             requester.role as UserRole,
         );
     }
@@ -131,9 +131,8 @@ export class UsersController {
                 throw new BadRequestException('No files were given');
         }
 
-        const requester = (req as any).user as JwtPayload;
-
-        return this.usersService.addPortfolioFile(id, file.path, requester.sub);
+        const requester = (req as any).user;
+        return this.usersService.addPortfolioFile(id, file.path, requester.id);
     }
 
     //Put/Patch HISTORIA USUARIO 07
@@ -166,9 +165,9 @@ export class UsersController {
             throw new BadRequestException('Debe especificar la ruta del archivo viejo a reemplazar (oldFilePath)');
         }
 
-        const requester = (req as any).user as JwtPayload;
+        const requester = (req as any).user;
 
-        return this.usersService.updatePortfolioFile(id, oldFilePath, file.path, requester.sub);
+        return this.usersService.updatePortfolioFile(id, oldFilePath, file.path, requester.id);
     }
     ///////////////////////////////////////////////////////////////
     // ─────────────────────────────────────────────────────────────
@@ -182,8 +181,8 @@ export class UsersController {
         @Body() dto: ChangePasswordDto,
         @Req() req: Request,
     ) {
-        const requester = (req as any).user as JwtPayload;
-        return this.usersService.changePassword(id, dto, requester.sub);
+        const requester = (req as any).user;
+        return this.usersService.changePassword(id, dto, requester.id);
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -208,4 +207,22 @@ export class UsersController {
         const requester = (req as any).user as JwtPayload;
         return this.usersService.remove(id, requester.role as UserRole);
     }
+
+    @Delete(':id/portfolio')
+    @UseGuards(JwtAuthGuard)
+    async deletePortfolioFile(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('filePath') filePath: string,
+    @Req() req: Request,) 
+    {
+    if (!filePath) {
+        throw new BadRequestException('Debe especificar la ruta del archivo a eliminar (filePath)');
+    }
+    const requester = (req as any).user;
+    return this.usersService.deletePortfolioFile(id, filePath, requester.id);
+}
+
+
+
+
 }
