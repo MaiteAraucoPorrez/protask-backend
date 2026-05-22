@@ -65,6 +65,9 @@ export class User {
   @Column({ type: 'simple-array', nullable: true })
   skills?: string[];
 
+  @Column({ type: 'simple-array', nullable: true })
+  portfolioFiles?: string[];
+
   @Column({ type: 'decimal', precision: 3, scale: 2, default: 0 })
   rating!: number;
 
