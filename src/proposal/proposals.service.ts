@@ -98,4 +98,50 @@ export class ProposalsService {
     
     return proposal;
   }
+
+  async acceptProposal(proposalId: string, clientId: string): Promise<Proposal> {
+  // Obtener propuesta con proyecto y su cliente
+  const proposal = await this.proposalRepository.findOne({
+    where: { id: proposalId },
+    relations: ['project', 'project.client', 'freelancer'],
+  });
+
+  if (!proposal) {
+    throw new NotFoundException('Propuesta no encontrada');
+  }
+
+  // Verificar que el solicitante es el cliente dueño del proyecto
+  if (proposal.project.client.id !== clientId) {
+    throw new ForbiddenException('No tienes permiso para aceptar esta propuesta');
+  }
+
+  // Verificar que la propuesta esté en estado 'pending'
+  if (proposal.status !== 'pending') {
+    throw new BadRequestException('Esta propuesta ya fue aceptada o rechazada');
+  }
+
+  // Aceptar la propuesta seleccionada
+  proposal.status = 'accepted';
+  await this.proposalRepository.save(proposal);
+
+  // Rechazar todas las demás propuestas del mismo proyecto 
+  await this.proposalRepository.update(
+    { project: { id: proposal.project.id }, status: 'pending' },
+    { status: 'rejected' }
+  );
+
+  // (Opcional) Actualizar el proyecto: cambiar estado a 'in_progress' y asignar freelancer
+  await this.projectRepository.update(proposal.project.id, {
+    status: 'in_progress',
+    
+  });
+
+  return proposal;
+}
+
+
+
+
+
+
 }
