@@ -5,6 +5,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ApiResponse } from '../common/dto/api-response.dto';
 import { UserStatus } from '../users/entities/user.entity';
+import { UserResponseDto } from '../users/dto/user-response.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -14,31 +15,30 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(dto: RegisterDto): Promise<ApiResponse<{ token: string; user: object }>> {
+  async register(dto: RegisterDto): Promise<ApiResponse<{ user: Pick<UserResponseDto, 'id' | 'name' | 'email' | 'role'> }>> {
     const response = await this.usersService.create(dto);
     const user = response.data;
 
-    const token = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
     return ApiResponse.success(
-      { token, user: { id: user.id, name: user.name, email: user.email, role: user.role } },
-      'Usuario registrado exitosamente',
+      { user: { id: user.id, name: user.name, email: user.email, role: user.role } },
+      'Usuario registrado exitosamente. Verifica tu correo para activar tu cuenta.',
     );
   }
 
-  async login(dto: LoginDto): Promise<ApiResponse<{ token: string; user: object }>> {
+  async login(dto: LoginDto): Promise<ApiResponse<{ token: string; user: Pick<UserResponseDto, 'id' | 'name' | 'email' | 'role'> }>> {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
 
     const match = await bcrypt.compare(dto.password, user.password);
     if (!match) throw new UnauthorizedException('Credenciales inválidas');
 
-    if (user.status === UserStatus.SUSPENDED || user.status === UserStatus.INACTIVE) {
-      throw new UnauthorizedException('Tu cuenta está suspendida o desactivada');
+    if (user.status !== UserStatus.ACTIVE) {
+      const messages: Record<string, string> = {
+        [UserStatus.PENDING_VERIFICATION]: 'Tu cuenta aún no ha sido verificada. Revisa tu correo.',
+        [UserStatus.SUSPENDED]: 'Tu cuenta está suspendida. Contacta al administrador.',
+        [UserStatus.INACTIVE]: 'Tu cuenta está desactivada.',
+      };
+      throw new UnauthorizedException(messages[user.status] ?? 'Tu cuenta no está activa.');
     }
 
     const token = this.jwtService.sign({
