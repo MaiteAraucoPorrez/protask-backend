@@ -8,10 +8,12 @@ export class RegisterDto {
   name!: string;
 
   @IsEmail({}, { message: 'El email no tiene un formato válido' })
+  @MaxLength(150, { message: 'El email no puede exceder 150 caracteres' })
   email!: string;
 
   @IsString()
   @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
+  @MaxLength(64, { message: 'La contraseña no puede exceder 64 caracteres' })
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
     message: 'La contraseña debe contener al menos una mayúscula, una minúscula y un número',
   })

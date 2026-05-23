@@ -22,7 +22,7 @@ import { KycModule } from './kyc/kyc.module';
 }),
 
     // ── Rate limiting (60 peticiones por minuto por IP) ───────────
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
+    ThrottlerModule.forRoot([{ ttl: 60, limit: 60 }]),
 
     // ── Database ─────────────────────────────────────────────────
     TypeOrmModule.forRootAsync({
