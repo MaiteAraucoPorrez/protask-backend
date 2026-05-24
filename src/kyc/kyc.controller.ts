@@ -103,7 +103,7 @@ enviarDocumentos(
         throw new BadRequestException('Usuario no autenticado');
     }
     
-    return this.kycService.enviarDocumentos(user.id, files ?? {});
+    return this.kycService.enviarDocumentos(user.sub, files ?? {});
 }
 
   // ─────────────────────────────────────────────────────────────
