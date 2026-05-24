@@ -23,25 +23,29 @@ export class EscrowController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.CLIENT)
   depositar(@Body() dto: CrearDepositoDto, @Req() req: Request) {
-    return this.escrowService.depositar(dto, (req as any).user.id);
+    const user = (req as any).user;
+    return this.escrowService.depositar(dto, user.sub);
   }
 
   @Get('mis-depositos')
   @UseGuards(RolesGuard)
   @Roles(UserRole.CLIENT)
   misDepositos(@Req() req: Request) {
-    return this.escrowService.misDepositos((req as any).user.id);
+    const user = (req as any).user;
+    return this.escrowService.misDepositos(user.sub);
   }
 
   @Get('mis-fondos')
-  @UseGuards(RolesGuard)
+  @UseGuards(RolesGuard)  
   @Roles(UserRole.FREELANCER)
   misFondos(@Req() req: Request) {
-    return this.escrowService.misFondos((req as any).user.id);
+    const user = (req as any).user; 
+    return this.escrowService.misFondos(user.sub);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string, @Req() req: Request) {
-    return this.escrowService.findOne(id, (req as any).user.id);
+    const user = (req as any).user;
+    return this.escrowService.findOne(id, user.sub);
   }
 }

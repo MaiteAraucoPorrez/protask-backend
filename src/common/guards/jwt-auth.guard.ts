@@ -26,9 +26,10 @@ export class JwtAuthGuard implements CanActivate {
         if (!token) {
             throw new UnauthorizedException('Token no proporcionado');
         }
-        //git commit -m "Cambios en proposals, projects  y users controllers para usar sub en vez de id"
+        
         try {
             const payload: JwtPayload = await this.jwtService.verifyAsync(token);
+            //(request as any).user = payload;
             (request as any).user = {
                 id: payload.sub,
                 email: payload.email,
