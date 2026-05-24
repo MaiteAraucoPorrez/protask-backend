@@ -12,9 +12,8 @@ export class ProjectsController {
 
   @Post()
   create(@Body() createDto: CreateProjectDto, @Req() req: Request) {
-
-    return this.projectsService.create(createDto, (req.user as any));
-
+    // req.user es el payload del token: { sub, email, role }
+    return this.projectsService.create(createDto, req.user as any);
   }
 
   @Get()
@@ -29,13 +28,13 @@ export class ProjectsController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDto: UpdateProjectDto, @Req() req: Request) {
-    
-    return this.projectsService.update(id, updateDto, (req.user as any).id);
+    const user = req.user as any;
+    return this.projectsService.update(id, updateDto, user.sub);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: Request) {
-    
-    return this.projectsService.remove(id, (req.user as any).id);
-  } 
+    const user = req.user as any;
+    return this.projectsService.remove(id, user.sub);
+  }
 }

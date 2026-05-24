@@ -11,9 +11,16 @@ export class ProjectsService {
   constructor(
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
+    @InjectRepository(User) // 👈 necesario para buscar al cliente
+    private usersRepository: Repository<User>,
   ) {}
 
-  async create(createDto: CreateProjectDto, client: User): Promise<Project> {
+  async create(createDto: CreateProjectDto, clientPayload: any): Promise<Project> {
+    // clientPayload tiene { sub, email, role }
+    const client = await this.usersRepository.findOne({ where: { id: clientPayload.sub } });
+    if (!client) {
+      throw new NotFoundException('Cliente no encontrado');
+    }
     const project = this.projectRepository.create({
       ...createDto,
       client,
@@ -42,22 +49,18 @@ export class ProjectsService {
 
   async update(id: string, updateDto: UpdateProjectDto, userId: string): Promise<Project> {
     const project = await this.findOne(id);
-    
     if (project.client.id !== userId) {
       throw new ForbiddenException('No puedes editar un proyecto que no te pertenece');
     }
-    
     Object.assign(project, updateDto);
     return this.projectRepository.save(project);
   }
 
   async remove(id: string, userId: string): Promise<void> {
     const project = await this.findOne(id);
-    
     if (project.client.id !== userId) {
       throw new ForbiddenException('No puedes eliminar un proyecto que no te pertenece');
     }
-    
     await this.projectRepository.remove(project);
   }
 }

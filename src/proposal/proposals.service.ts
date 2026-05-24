@@ -13,16 +13,16 @@ export class ProposalsService {
     private proposalRepository: Repository<Proposal>,
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
-    @InjectRepository(User) 
-    private usersRepository: Repository<User>,  
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
   ) {}
 
   async create(projectId: string, createDto: CreateProposalDto, freelancerPayload: any): Promise<Proposal> {
-    // Buscar el freelancer completo en la base de datos para obtener isVerified
+    // Buscar el freelancer completo usando sub (que es el id del usuario)
     const freelancer = await this.usersRepository.findOne({
-      where: { id: freelancerPayload.id },
+      where: { id: freelancerPayload.sub },
     });
-    
+
     if (!freelancer) {
       throw new NotFoundException('Freelancer no encontrado');
     }
@@ -32,34 +32,29 @@ export class ProposalsService {
       where: { id: projectId },
       relations: ['client'],
     });
-    
+
     if (!project) {
       throw new NotFoundException('Proyecto no encontrado');
     }
 
-    // Validar que el proyecto tenga un cliente asignado
     if (!project.client) {
       throw new BadRequestException('El proyecto no tiene un cliente asignado');
     }
 
-    // Verificar que el proyecto está abierto a propuestas
     if (project.status !== 'open') {
       throw new BadRequestException('Este proyecto ya no está abierto a propuestas');
     }
 
-    // Verificar que el freelancer no sea el mismo que el cliente
     if (project.client.id === freelancer.id) {
       throw new ForbiddenException('No puedes enviar propuesta a tu propio proyecto');
     }
 
-    // Verificación KYC usando el freelancer de la base de datos
     if (!freelancer.isVerified) {
       throw new ForbiddenException(
-        'Perfil no verificado. Debes completar la verificación KYC para postular a proyectos'
+        'Perfil no verificado. Debes completar la verificación KYC para postular a proyectos',
       );
     }
 
-    // Crear la propuesta
     const proposal = this.proposalRepository.create({
       ...createDto,
       project,
@@ -91,57 +86,46 @@ export class ProposalsService {
       where: { id },
       relations: ['project', 'freelancer'],
     });
-    
+
     if (!proposal) {
       throw new NotFoundException('Propuesta no encontrada');
     }
-    
+
     return proposal;
   }
 
   async acceptProposal(proposalId: string, clientId: string): Promise<Proposal> {
-  // Obtener propuesta con proyecto y su cliente
-  const proposal = await this.proposalRepository.findOne({
-    where: { id: proposalId },
-    relations: ['project', 'project.client', 'freelancer'],
-  });
+    const proposal = await this.proposalRepository.findOne({
+      where: { id: proposalId },
+      relations: ['project', 'project.client', 'freelancer'],
+    });
 
-  if (!proposal) {
-    throw new NotFoundException('Propuesta no encontrada');
+    if (!proposal) {
+      throw new NotFoundException('Propuesta no encontrada');
+    }
+
+    if (proposal.project.client.id !== clientId) {
+      throw new ForbiddenException('No tienes permiso para aceptar esta propuesta');
+    }
+
+    if (proposal.status !== 'pending') {
+      throw new BadRequestException('Esta propuesta ya fue aceptada o rechazada');
+    }
+
+    proposal.status = 'accepted';
+    await this.proposalRepository.save(proposal);
+
+    // Rechazar las demás propuestas del mismo proyecto
+    await this.proposalRepository.update(
+      { project: { id: proposal.project.id }, status: 'pending' },
+      { status: 'rejected' },
+    );
+
+    // Opcional: actualizar el estado del proyecto
+    await this.projectRepository.update(proposal.project.id, {
+      status: 'in_progress',
+    });
+
+    return proposal;
   }
-
-  // Verificar que el solicitante es el cliente dueño del proyecto
-  if (proposal.project.client.id !== clientId) {
-    throw new ForbiddenException('No tienes permiso para aceptar esta propuesta');
-  }
-
-  // Verificar que la propuesta esté en estado 'pending'
-  if (proposal.status !== 'pending') {
-    throw new BadRequestException('Esta propuesta ya fue aceptada o rechazada');
-  }
-
-  // Aceptar la propuesta seleccionada
-  proposal.status = 'accepted';
-  await this.proposalRepository.save(proposal);
-
-  // Rechazar todas las demás propuestas del mismo proyecto 
-  await this.proposalRepository.update(
-    { project: { id: proposal.project.id }, status: 'pending' },
-    { status: 'rejected' }
-  );
-
-  // (Opcional) Actualizar el proyecto: cambiar estado a 'in_progress' y asignar freelancer
-  await this.projectRepository.update(proposal.project.id, {
-    status: 'in_progress',
-    
-  });
-
-  return proposal;
-}
-
-
-
-
-
-
 }
