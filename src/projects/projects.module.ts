@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CacheModule } from '@nestjs/cache-manager';
 import { ProjectsService } from './projects.service';
 import { ProjectsController } from './projects.controller';
 import { Project } from './entities/project.entity';
@@ -8,7 +9,8 @@ import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Project, User]), // 👈 agregamos User
+    TypeOrmModule.forFeature([Project, User]),
+    CacheModule.register(),  
     AuthModule,
   ],
   controllers: [ProjectsController],

@@ -3,8 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Proposal } from './entities/proposal.entity';
 import { CreateProposalDto } from './dto/create-proposal.dto';
+import { ProposalQueryDto } from './dto/proposal-query.dto';
 import { Project } from '../projects/entities/project.entity';
 import { User } from '../users/entities/user.entity';
+import { ApiResponse, PaginationMeta } from '../common/dto/api-response.dto';
 
 @Injectable()
 export class ProposalsService {
@@ -18,41 +20,31 @@ export class ProposalsService {
   ) {}
 
   async create(projectId: string, createDto: CreateProposalDto, freelancerPayload: any): Promise<Proposal> {
-    // Buscar el freelancer completo usando sub (que es el id del usuario)
     const freelancer = await this.usersRepository.findOne({
       where: { id: freelancerPayload.sub },
     });
-
     if (!freelancer) {
       throw new NotFoundException('Freelancer no encontrado');
     }
 
-    // Verificar que el proyecto existe y cargar la relación con client
     const project = await this.projectRepository.findOne({
       where: { id: projectId },
       relations: ['client'],
     });
-
     if (!project) {
       throw new NotFoundException('Proyecto no encontrado');
     }
-
     if (!project.client) {
       throw new BadRequestException('El proyecto no tiene un cliente asignado');
     }
-
     if (project.status !== 'open') {
       throw new BadRequestException('Este proyecto ya no está abierto a propuestas');
     }
-
     if (project.client.id === freelancer.id) {
       throw new ForbiddenException('No puedes enviar propuesta a tu propio proyecto');
     }
-
     if (!freelancer.isVerified) {
-      throw new ForbiddenException(
-        'Perfil no verificado. Debes completar la verificación KYC para postular a proyectos',
-      );
+      throw new ForbiddenException('Perfil no verificado. Debes completar la verificación KYC para postular a proyectos');
     }
 
     const proposal = this.proposalRepository.create({
@@ -61,24 +53,55 @@ export class ProposalsService {
       freelancer,
       status: 'pending',
     });
-
     return this.proposalRepository.save(proposal);
   }
 
-  async findByProject(projectId: string): Promise<Proposal[]> {
-    return this.proposalRepository.find({
+  async findByProject(projectId: string, query: ProposalQueryDto): Promise<ApiResponse<Proposal[]>> {
+    const { page, limit } = query;
+    const skip = (page - 1) * limit;
+
+    const [items, totalCount] = await this.proposalRepository.findAndCount({
       where: { project: { id: projectId } },
       relations: ['freelancer'],
       order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
     });
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const pagination = new PaginationMeta();
+    pagination.totalCount = totalCount;
+    pagination.pageSize = limit;
+    pagination.currentPage = page;
+    pagination.totalPages = totalPages;
+    pagination.hasNextPage = page < totalPages;
+    pagination.hasPreviousPage = page > 1;
+
+    return ApiResponse.info(items, 'Propuestas recuperadas correctamente', pagination);
   }
 
-  async findByFreelancer(freelancerId: string): Promise<Proposal[]> {
-    return this.proposalRepository.find({
+  async findByFreelancer(freelancerId: string, query: ProposalQueryDto): Promise<ApiResponse<Proposal[]>> {
+    const { page, limit } = query;
+    const skip = (page - 1) * limit;
+
+    const [items, totalCount] = await this.proposalRepository.findAndCount({
       where: { freelancer: { id: freelancerId } },
       relations: ['project'],
       order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
     });
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const pagination = new PaginationMeta();
+    pagination.totalCount = totalCount;
+    pagination.pageSize = limit;
+    pagination.currentPage = page;
+    pagination.totalPages = totalPages;
+    pagination.hasNextPage = page < totalPages;
+    pagination.hasPreviousPage = page > 1;
+
+    return ApiResponse.info(items, 'Tus propuestas recuperadas correctamente', pagination);
   }
 
   async findOne(id: string): Promise<Proposal> {
@@ -86,11 +109,9 @@ export class ProposalsService {
       where: { id },
       relations: ['project', 'freelancer'],
     });
-
     if (!proposal) {
       throw new NotFoundException('Propuesta no encontrada');
     }
-
     return proposal;
   }
 
@@ -99,15 +120,12 @@ export class ProposalsService {
       where: { id: proposalId },
       relations: ['project', 'project.client', 'freelancer'],
     });
-
     if (!proposal) {
       throw new NotFoundException('Propuesta no encontrada');
     }
-
     if (proposal.project.client.id !== clientId) {
       throw new ForbiddenException('No tienes permiso para aceptar esta propuesta');
     }
-
     if (proposal.status !== 'pending') {
       throw new BadRequestException('Esta propuesta ya fue aceptada o rechazada');
     }
@@ -115,13 +133,11 @@ export class ProposalsService {
     proposal.status = 'accepted';
     await this.proposalRepository.save(proposal);
 
-    // Rechazar las demás propuestas del mismo proyecto
     await this.proposalRepository.update(
       { project: { id: proposal.project.id }, status: 'pending' },
       { status: 'rejected' },
     );
 
-    // Opcional: actualizar el estado del proyecto
     await this.projectRepository.update(proposal.project.id, {
       status: 'in_progress',
     });

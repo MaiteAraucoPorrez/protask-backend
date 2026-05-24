@@ -6,10 +6,12 @@ import {
   Body,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { EscrowService } from './escrow.service';
 import { CrearDepositoDto } from './dto/crear-deposito.dto';
+import { EscrowQueryDto } from './dto/escrow-query.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../common/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
@@ -30,17 +32,17 @@ export class EscrowController {
   @Get('mis-depositos')
   @UseGuards(RolesGuard)
   @Roles(UserRole.CLIENT)
-  misDepositos(@Req() req: Request) {
+  misDepositos(@Req() req: Request, @Query() query: EscrowQueryDto) {
     const user = (req as any).user;
-    return this.escrowService.misDepositos(user.sub);
+    return this.escrowService.misDepositos(user.sub, query);
   }
 
   @Get('mis-fondos')
-  @UseGuards(RolesGuard)  
+  @UseGuards(RolesGuard)
   @Roles(UserRole.FREELANCER)
-  misFondos(@Req() req: Request) {
-    const user = (req as any).user; 
-    return this.escrowService.misFondos(user.sub);
+  misFondos(@Req() req: Request, @Query() query: EscrowQueryDto) {
+    const user = (req as any).user;
+    return this.escrowService.misFondos(user.sub, query);
   }
 
   @Get(':id')

@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn, Index, } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('projects')
@@ -13,6 +13,7 @@ export class Project {
   description!  : string;
 
   @Column()
+  @Index() 
   category!: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
@@ -22,12 +23,15 @@ export class Project {
   deadlineDays!: number;
 
   @Column({ default: 'open' })
+  @Index() 
   status!: string; // open, in_progress, completed, cancelled
 
   @ManyToOne(() => User, { eager: true })
+  @Index() 
   client!: User;
 
   @CreateDateColumn()
+  @Index() 
   createdAt!: Date;
 
   @Column({ default: false })

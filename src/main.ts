@@ -5,9 +5,13 @@ import { join } from 'path';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import helmet from 'helmet';
+import compression from 'compression';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Compresión Gzip/Brotli para todas las respuestas
+  app.use(compression());
 
   // Serve uploaded KYC documents as static files at /uploads/...
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });

@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
@@ -21,6 +22,7 @@ export class KycVerification {
   id!: string;
 
   @Column()
+  @Index({ unique: true })
   userId!: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE', eager: false })
@@ -32,6 +34,7 @@ export class KycVerification {
     enum: KycStatus,
     default: KycStatus.PENDIENTE,
   })
+  @Index() 
   status!: KycStatus;
 
   @Column({ type: 'varchar', length: 500, nullable: true })

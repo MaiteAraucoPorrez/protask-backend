@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Req, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards, Req, Patch, Query } from '@nestjs/common';
 import { ProposalsService } from './proposals.service';
 import { CreateProposalDto } from './dto/create-proposal.dto';
+import { ProposalQueryDto } from './dto/proposal-query.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Request } from 'express';
 
@@ -15,19 +16,25 @@ export class ProposalsController {
     @Body() createDto: CreateProposalDto,
     @Req() req: Request,
   ) {
-    const user = (req as any).user; // payload: { sub, email, role }
+    const user = (req as any).user;
     return this.proposalsService.create(projectId, createDto, user);
   }
 
   @Get('project/:projectId')
-  findByProject(@Param('projectId') projectId: string) {
-    return this.proposalsService.findByProject(projectId);
+  findByProject(
+    @Param('projectId') projectId: string,
+    @Query() query: ProposalQueryDto,
+  ) {
+    return this.proposalsService.findByProject(projectId, query);
   }
 
   @Get('freelancer/me')
-  findByFreelancer(@Req() req: Request) {
+  findByFreelancer(
+    @Query() query: ProposalQueryDto,
+    @Req() req: Request,
+  ) {
     const user = (req as any).user;
-    return this.proposalsService.findByFreelancer(user.sub);
+    return this.proposalsService.findByFreelancer(user.sub, query);
   }
 
   @Get(':id')
@@ -36,7 +43,7 @@ export class ProposalsController {
   }
 
   @Patch(':id/accept')
-  async acceptProposal(@Param('id') id: string, @Req() req: Request) {
+  acceptProposal(@Param('id') id: string, @Req() req: Request) {
     const user = (req as any).user;
     return this.proposalsService.acceptProposal(id, user.sub);
   }
