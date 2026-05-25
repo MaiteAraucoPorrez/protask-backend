@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, UpdateDateColumn, Index, } from 'typeorm';
 import { Project } from '../../projects/entities/project.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -17,12 +17,15 @@ export class Proposal {
   description!: string;
 
   @Column({ default: 'pending' })
+  @Index() 
   status!: string;
 
   @ManyToOne(() => Project)
+  @Index() 
   project!: Project;
 
   @ManyToOne(() => User)
+  @Index() 
   freelancer!: User;
 
   @CreateDateColumn()

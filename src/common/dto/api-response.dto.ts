@@ -1,52 +1,40 @@
 export class PaginationMeta {
-    totalCount: number;
-    pageSize: number;
-    currentPage: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
+  totalCount: number = 0;
+  pageSize: number = 10;
+  currentPage: number = 1;
+  totalPages: number = 1;
+  hasNextPage: boolean = false;
+  hasPreviousPage: boolean = false;
 }
 
 export class ApiResponse<T> {
-    data: T;
-    messages: { type: string; description: string }[];
-    pagination?: PaginationMeta;
+  messages: { type: string; description: string }[];
+  data: T | null;
+  pagination?: PaginationMeta;
 
-    constructor(
-        data: T,
-        messages: { type: string; description: string }[] = [],
-        pagination?: PaginationMeta,
-    ) {
-        this.data = data;
-        this.messages = messages;
-        this.pagination = pagination;
-    }
+  constructor(
+    messages: { type: string; description: string }[],
+    data: T | null = null,
+    pagination?: PaginationMeta,
+  ) {
+    this.messages = messages;
+    this.data = data;
+    this.pagination = pagination;
+  }
 
-    static success<T>(
-        data: T,
-        description = 'Operación exitosa',
-        pagination?: PaginationMeta,
-    ): ApiResponse<T> {
-        return new ApiResponse(
-            data,
-            [{ type: 'Success', description }],
-            pagination,
-        );
-    }
+  static success<T>(data: T, message: string, pagination?: PaginationMeta): ApiResponse<T> {
+    return new ApiResponse([{ type: 'Success', description: message }], data, pagination);
+  }
 
-    static info<T>(
-        data: T,
-        description = 'Información recuperada correctamente',
-        pagination?: PaginationMeta,
-    ): ApiResponse<T> {
-        return new ApiResponse(
-            data,
-            [{ type: 'Information', description }],
-            pagination,
-        );
-    }
+  static error<T>(message: string, data: T | null = null): ApiResponse<T> {
+    return new ApiResponse([{ type: 'Error', description: message }], data);
+  }
 
-    static error<T>(description: string): ApiResponse<T> {
-        return new ApiResponse(null as T, [{ type: 'Error', description }]);
-    }
+  static info<T>(data: T, message: string, pagination?: PaginationMeta): ApiResponse<T> {
+    return new ApiResponse([{ type: 'Information', description: message }], data, pagination);
+  }
+
+  static warning<T>(message: string, data: T | null = null): ApiResponse<T> {
+    return new ApiResponse([{ type: 'Warning', description: message }], data);
+  }
 }

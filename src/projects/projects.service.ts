@@ -1,22 +1,26 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { Project } from './entities/project.entity';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { ProjectQueryDto } from './dto/project-query.dto';
 import { User } from '../users/entities/user.entity';
+import { ApiResponse, PaginationMeta } from '../common/dto/api-response.dto';
 
 @Injectable()
 export class ProjectsService {
   constructor(
     @InjectRepository(Project)
     private projectRepository: Repository<Project>,
-    @InjectRepository(User) // 👈 necesario para buscar al cliente
+    @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async create(createDto: CreateProjectDto, clientPayload: any): Promise<Project> {
-    // clientPayload tiene { sub, email, role }
     const client = await this.usersRepository.findOne({ where: { id: clientPayload.sub } });
     if (!client) {
       throw new NotFoundException('Cliente no encontrado');
@@ -26,14 +30,35 @@ export class ProjectsService {
       client,
       status: 'open',
     });
-    return this.projectRepository.save(project);
+    const saved = await this.projectRepository.save(project);
+    
+    // Limpiar caché de listados
+    await this.cacheManager.del('/api/projects');
+    
+    return saved;
   }
 
-  async findAll(): Promise<Project[]> {
-    return this.projectRepository.find({
+  async findAll(query: ProjectQueryDto): Promise<ApiResponse<Project[]>> {
+    const { page, limit } = query;
+    const skip = (page - 1) * limit;
+
+    const [items, totalCount] = await this.projectRepository.findAndCount({
       relations: ['client'],
       order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
     });
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const pagination = new PaginationMeta();
+    pagination.totalCount = totalCount;
+    pagination.pageSize = limit;
+    pagination.currentPage = page;
+    pagination.totalPages = totalPages;
+    pagination.hasNextPage = page < totalPages;
+    pagination.hasPreviousPage = page > 1;
+
+    return ApiResponse.info(items, 'Proyectos recuperados correctamente', pagination);
   }
 
   async findOne(id: string): Promise<Project> {
@@ -53,7 +78,13 @@ export class ProjectsService {
       throw new ForbiddenException('No puedes editar un proyecto que no te pertenece');
     }
     Object.assign(project, updateDto);
-    return this.projectRepository.save(project);
+    const updated = await this.projectRepository.save(project);
+    
+    // Limpiar caché de listados y del proyecto específico
+    await this.cacheManager.del('/api/projects');
+    await this.cacheManager.del(`/api/projects/${id}`);
+    
+    return updated;
   }
 
   async remove(id: string, userId: string): Promise<void> {
@@ -62,5 +93,9 @@ export class ProjectsService {
       throw new ForbiddenException('No puedes eliminar un proyecto que no te pertenece');
     }
     await this.projectRepository.remove(project);
+    
+    // Limpiar caché de listados y del proyecto específico
+    await this.cacheManager.del('/api/projects');
+    await this.cacheManager.del(`/api/projects/${id}`);
   }
 }

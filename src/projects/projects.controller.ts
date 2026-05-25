@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Req, Query, UseInterceptors } from '@nestjs/common';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { ProjectQueryDto } from './dto/project-query.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Request } from 'express';
 
@@ -12,13 +14,13 @@ export class ProjectsController {
 
   @Post()
   create(@Body() createDto: CreateProjectDto, @Req() req: Request) {
-    // req.user es el payload del token: { sub, email, role }
-    return this.projectsService.create(createDto, req.user as any);
+    return this.projectsService.create(createDto, (req.user as any));
   }
 
   @Get()
-  findAll() {
-    return this.projectsService.findAll();
+  @UseInterceptors(CacheInterceptor)
+  findAll(@Query() query: ProjectQueryDto) {
+    return this.projectsService.findAll(query);
   }
 
   @Get(':id')
@@ -28,13 +30,13 @@ export class ProjectsController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateDto: UpdateProjectDto, @Req() req: Request) {
-    const user = req.user as any;
+    const user = (req as any).user;
     return this.projectsService.update(id, updateDto, user.sub);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: Request) {
-    const user = req.user as any;
+    const user = (req as any).user;
     return this.projectsService.remove(id, user.sub);
   }
 }

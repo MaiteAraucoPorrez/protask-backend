@@ -1,12 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { ApiResponse } from '../common/dto/api-response.dto';
-import { UserStatus } from '../users/entities/user.entity';
-import { UserResponseDto } from '../users/dto/user-response.dto';
 import * as bcrypt from 'bcrypt';
+import { ApiResponse } from '../common/dto/api-response.dto';
+import { UserResponseDto } from '../users/dto/user-response.dto';
+import { UserStatus } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +18,10 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<ApiResponse<{ user: Pick<UserResponseDto, 'id' | 'name' | 'email' | 'role'> }>> {
     const response = await this.usersService.create(dto);
     const user = response.data;
+    
+    if (!user) {
+      throw new BadRequestException('No se pudo crear el usuario');
+    }
 
     return ApiResponse.success(
       { user: { id: user.id, name: user.name, email: user.email, role: user.role } },
@@ -55,7 +59,14 @@ export class AuthService {
     );
   }
 
-  async getMe(userId: string) {
-    return this.usersService.findOne(userId);
+  async getMe(userId: string): Promise<ApiResponse<UserResponseDto>> {
+    const response = await this.usersService.findOne(userId);
+    const user = response.data;
+    
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+    
+    return ApiResponse.success(user, 'Perfil recuperado exitosamente');
   }
 }

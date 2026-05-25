@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
 import { Reflector } from '@nestjs/core';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
@@ -22,6 +23,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
                 signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') },
             }),
         }),
+        CacheModule.register(), // ← Agregar esta línea
     ],
     providers: [
         UsersService,

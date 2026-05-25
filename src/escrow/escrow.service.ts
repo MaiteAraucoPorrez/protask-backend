@@ -10,6 +10,8 @@ import { Repository } from 'typeorm';
 import { EscrowDeposit, EscrowEstado } from './entities/escrow-deposit.entity';
 import { Proposal } from '../proposal/entities/proposal.entity';
 import { CrearDepositoDto } from './dto/crear-deposito.dto';
+import { EscrowQueryDto } from './dto/escrow-query.dto';
+import { ApiResponse, PaginationMeta } from '../common/dto/api-response.dto';
 
 @Injectable()
 export class EscrowService {
@@ -59,20 +61,52 @@ export class EscrowService {
     return this.escrowRepository.save(deposito);
   }
 
-  async misDepositos(clienteId: string): Promise<EscrowDeposit[]> {
-    return this.escrowRepository.find({
+  async misDepositos(clienteId: string, query: EscrowQueryDto): Promise<ApiResponse<EscrowDeposit[]>> {
+    const { page, limit } = query;
+    const skip = (page - 1) * limit;
+
+    const [items, totalCount] = await this.escrowRepository.findAndCount({
       where: { cliente: { id: clienteId } },
       relations: ['proposal', 'proposal.project', 'freelancer'],
       order: { depositadoEn: 'DESC' },
+      skip,
+      take: limit,
     });
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const pagination = new PaginationMeta();
+    pagination.totalCount = totalCount;
+    pagination.pageSize = limit;
+    pagination.currentPage = page;
+    pagination.totalPages = totalPages;
+    pagination.hasNextPage = page < totalPages;
+    pagination.hasPreviousPage = page > 1;
+
+    return ApiResponse.info(items, 'Depósitos recuperados correctamente', pagination);
   }
 
-  async misFondos(freelancerId: string): Promise<EscrowDeposit[]> {
-    return this.escrowRepository.find({
+  async misFondos(freelancerId: string, query: EscrowQueryDto): Promise<ApiResponse<EscrowDeposit[]>> {
+    const { page, limit } = query;
+    const skip = (page - 1) * limit;
+
+    const [items, totalCount] = await this.escrowRepository.findAndCount({
       where: { freelancer: { id: freelancerId } },
       relations: ['proposal', 'proposal.project', 'cliente'],
       order: { depositadoEn: 'DESC' },
+      skip,
+      take: limit,
     });
+
+    const totalPages = Math.ceil(totalCount / limit);
+    const pagination = new PaginationMeta();
+    pagination.totalCount = totalCount;
+    pagination.pageSize = limit;
+    pagination.currentPage = page;
+    pagination.totalPages = totalPages;
+    pagination.hasNextPage = page < totalPages;
+    pagination.hasPreviousPage = page > 1;
+
+    return ApiResponse.info(items, 'Fondos recuperados correctamente', pagination);
   }
 
   async findOne(id: string, userId: string): Promise<EscrowDeposit> {

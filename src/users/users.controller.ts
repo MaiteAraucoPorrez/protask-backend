@@ -33,6 +33,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard, JwtPayload } from '../common/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../common/guards/roles.guard';
 import { UserRole } from './entities/user.entity';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 
 @Controller('users')
 export class UsersController {
@@ -54,8 +55,9 @@ export class UsersController {
     // GET /users/freelancers?skill=&location=&page=&limit=
     // ─────────────────────────────────────────────────────────────
     @Get('freelancers')
+    @UseInterceptors(CacheInterceptor)
     findFreelancers(@Query() query: UserQueryDto) {
-        return this.usersService.findFreelancers(query);
+    return this.usersService.findFreelancers(query);
     }
 
     // ─────────────────────────────────────────────────────────────

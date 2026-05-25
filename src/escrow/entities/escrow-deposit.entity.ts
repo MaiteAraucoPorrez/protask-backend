@@ -7,6 +7,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { Proposal } from '../../proposal/entities/proposal.entity';
 import { User } from '../../users/entities/user.entity';
@@ -24,18 +25,22 @@ export class EscrowDeposit {
 
   @OneToOne(() => Proposal)
   @JoinColumn()
+  @Index({ unique: true })
   proposal!: Proposal;
 
   @ManyToOne(() => User)
+  @Index()
   cliente!: User;
 
   @ManyToOne(() => User)
+  @Index()
   freelancer!: User;
 
   @Column('decimal', { precision: 10, scale: 2 })
   monto!: number;
 
   @Column({ type: 'enum', enum: EscrowEstado, default: EscrowEstado.RETENIDO })
+  @Index()
   estado!: EscrowEstado;
 
   @Column({ nullable: true })

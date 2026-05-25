@@ -4,7 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
+
+
+
 
 export enum UserRole {
   CLIENT = 'cliente',
@@ -28,6 +32,7 @@ export class User {
   name!: string;
 
   @Column({ unique: true, length: 150 })
+  @Index()
   email!: string;
 
   @Column({ select: false })
@@ -38,6 +43,7 @@ export class User {
     enum: UserRole,
     default: UserRole.CLIENT,
   })
+  @Index()
   role!: UserRole;
 
   @Column({
@@ -45,6 +51,7 @@ export class User {
     enum: UserStatus,
     default: UserStatus.PENDING_VERIFICATION,
   })
+  @Index() 
   status!: UserStatus;
 
   @Column({ length: 20, nullable: true })
