@@ -155,4 +155,33 @@ export class EscrowService {
 
     return deposito;
   }
+
+  async findByProposal(proposalId: string): Promise<EscrowDeposit | null> {
+  return this.escrowRepository.findOne({
+    where: { proposal: { id: proposalId } },
+    relations: ['proposal', 'cliente', 'freelancer'],
+  });
+}
+
+async reembolsar(proposalId: string): Promise<EscrowDeposit> {
+  const deposito = await this.findByProposal(proposalId);
+
+  if (!deposito) {
+    throw new NotFoundException('No hay depósito en escrow para esta propuesta');
+  }
+
+  if (deposito.estado !== EscrowEstado.RETENIDO) {
+    throw new BadRequestException('El depósito ya no está retenido');
+  }
+
+  deposito.estado = EscrowEstado.REEMBOLSADO;
+  deposito.reembolsadoEn = new Date();
+  await this.escrowRepository.save(deposito);
+
+  return deposito;
+}
+
+
+
+
 }
