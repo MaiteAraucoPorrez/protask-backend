@@ -13,6 +13,7 @@ import { ProposalsModule } from './proposal/proposals.module';
 import { KycModule } from './kyc/kyc.module';
 import { EscrowModule } from './escrow/escrow.module';
 import { DeliveriesModule } from './deliveries/deliveries.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { DeliveriesModule } from './deliveries/deliveries.module';
     KycModule,
     EscrowModule,
     DeliveriesModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [
