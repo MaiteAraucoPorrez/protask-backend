@@ -1,3 +1,4 @@
+import { EscrowModule } from '../escrow/escrow.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -15,9 +16,11 @@ import { DeliveryFile } from './entities/delivery-file.entity';
     TypeOrmModule.forFeature([Delivery, DeliveryFile, Proposal, User]),
     CacheModule.register(),
     AuthModule,
+    EscrowModule,
   ],
   controllers: [DeliveriesController],
   providers: [DeliveriesService],
+  
   exports: [DeliveriesService],
 })
 export class DeliveriesModule {}

@@ -45,4 +45,9 @@ export class Delivery {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+  
+  @Column({ type: 'int', default: 0 })
+  revisionCount!: number;
+
+
 }

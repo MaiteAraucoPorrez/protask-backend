@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Param,
   Body,
   UseGuards,
@@ -67,7 +68,6 @@ export class DeliveriesController {
   ) {
     const user = (req as any).user;
     const uploadedFiles = files?.files || [];
-
     return this.deliveriesService.create(createDto, uploadedFiles, user.sub);
   }
 
@@ -79,5 +79,28 @@ export class DeliveriesController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.deliveriesService.findOne(id);
+  }
+
+  @Patch(':id/approve')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.CLIENT)
+  async approve(@Param('id') id: string, @Req() req: Request) {
+    const user = (req as any).user;
+    return this.deliveriesService.approve(id, user.sub);
+  }
+
+  @Patch(':id/request-revision')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.CLIENT)
+  async requestRevision(
+    @Param('id') id: string,
+    @Body('revisionComment') revisionComment: string,
+    @Req() req: Request,
+  ) {
+    if (!revisionComment || revisionComment.trim() === '') {
+      throw new BadRequestException('Debe proporcionar un comentario para la revisión');
+    }
+    const user = (req as any).user;
+    return this.deliveriesService.requestRevision(id, user.sub, revisionComment);
   }
 }

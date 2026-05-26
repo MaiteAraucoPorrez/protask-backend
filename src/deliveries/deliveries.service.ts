@@ -9,6 +9,7 @@ import { Proposal } from '../proposal/entities/proposal.entity';
 import { User } from '../users/entities/user.entity';
 import { ApiResponse } from '../common/dto/api-response.dto';
 import { DeliveryResponseDto } from './dto/delivery-response.dto';
+import { EscrowService } from '../escrow/escrow.service';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -23,14 +24,17 @@ export class DeliveriesService {
     private proposalRepository: Repository<Proposal>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private readonly escrowService: EscrowService,
   ) {}
+
+
 
   async create(
     createDto: CreateDeliveryDto,
     files: Express.Multer.File[],
     freelancerId: string,
   ): Promise<ApiResponse<DeliveryResponseDto>> {
-    // 1. Verificar que la propuesta existe y está aceptada
+    // Verificar que la propuesta existe y está aceptada
     const proposal = await this.proposalRepository.findOne({
       where: { id: createDto.proposalId },
       relations: ['project', 'freelancer'],
@@ -40,17 +44,17 @@ export class DeliveriesService {
       throw new NotFoundException('Propuesta no encontrada');
     }
 
-    // 2. Verificar que el freelancer es el asignado
+    // Verificar que el freelancer es el asignado
     if (proposal.freelancer.id !== freelancerId) {
       throw new ForbiddenException('No eres el freelancer asignado a esta propuesta');
     }
 
-    // 3. Verificar que la propuesta está aceptada
+    // Verificar que la propuesta está aceptada
     if (proposal.status !== 'accepted') {
       throw new BadRequestException('La propuesta no ha sido aceptada aún');
     }
 
-    // 4. Verificar que no hay una entrega pendiente sin revisar
+    // Verificar que no hay una entrega pendiente sin revisar
     const pendingDelivery = await this.deliveryRepository.findOne({
       where: {
         proposal: { id: createDto.proposalId },
@@ -62,7 +66,7 @@ export class DeliveriesService {
       throw new BadRequestException('Ya tienes una entrega pendiente de revisión');
     }
 
-    // 5. Crear la entrega
+    // Crear la entrega
     const delivery = this.deliveryRepository.create({
       comment: createDto.comment,
       status: DeliveryStatus.PENDING,
@@ -73,7 +77,7 @@ export class DeliveriesService {
 
     const savedDelivery = await this.deliveryRepository.save(delivery);
 
-    // 6. Guardar los archivos
+    // Guardar los archivos
     if (files && files.length > 0) {
       const deliveryFiles = files.map((file) =>
         this.deliveryFileRepository.create({
@@ -118,4 +122,71 @@ export class DeliveriesService {
 
     return ApiResponse.info(new DeliveryResponseDto(delivery), 'Entrega recuperada');
   }
+
+
+  async approve(id: string, clientId: string): Promise<ApiResponse<DeliveryResponseDto>> {
+  const delivery = await this.deliveryRepository.findOne({
+    where: { id },
+    relations: ['proposal', 'proposal.project.client', 'freelancer', 'files'],
+  });
+
+  if (!delivery) {
+    throw new NotFoundException('Entrega no encontrada');
+  }
+
+  // Verificar que el cliente sea el dueño del proyecto
+  if (delivery.proposal.project.client.id !== clientId) {
+    throw new ForbiddenException('No eres el cliente del proyecto');
+  }
+
+  if (delivery.status !== DeliveryStatus.PENDING) {
+    throw new BadRequestException('Esta entrega no está pendiente de revisión');
+  }
+
+  // Liberar pago en escrow
+  await this.escrowService.liberar(delivery.proposal.id, clientId);
+
+  // Actualizar estado de la entrega
+  delivery.status = DeliveryStatus.APPROVED;
+  const updated = await this.deliveryRepository.save(delivery);
+
+  return ApiResponse.success(
+    new DeliveryResponseDto(updated),
+    'Entrega aprobada y pago liberado exitosamente',
+  );
+}
+
+async requestRevision(
+  id: string,
+  clientId: string,
+  revisionComment: string,
+): Promise<ApiResponse<DeliveryResponseDto>> {
+  const delivery = await this.deliveryRepository.findOne({
+    where: { id },
+    relations: ['proposal', 'proposal.project.client', 'freelancer', 'files'],
+  });
+
+  if (!delivery) {
+    throw new NotFoundException('Entrega no encontrada');
+  }
+
+  if (delivery.proposal.project.client.id !== clientId) {
+    throw new ForbiddenException('No eres el cliente del proyecto');
+  }
+
+  if (delivery.status !== DeliveryStatus.PENDING) {
+    throw new BadRequestException('Esta entrega no está pendiente de revisión');
+  }
+
+  delivery.status = DeliveryStatus.REVISION_REQUESTED;
+  delivery.revisionComment = revisionComment;
+  delivery.revisionCount += 1;
+  const updated = await this.deliveryRepository.save(delivery);
+
+  return ApiResponse.success(
+    new DeliveryResponseDto(updated),
+    'Solicitud de revisión enviada. El freelancer deberá corregir la entrega.',
+  );
+}
+
 }

@@ -128,4 +128,31 @@ export class EscrowService {
 
     return deposito;
   }
+
+  async liberar(proposalId: string, clienteId: string): Promise<EscrowDeposit> {
+    const deposito = await this.escrowRepository.findOne({
+      where: { proposal: { id: proposalId } },
+      relations: ['proposal', 'cliente', 'freelancer'],
+    });
+
+    if (!deposito) {
+      throw new NotFoundException('No hay depósito en escrow para esta propuesta');
+    }
+
+    if (deposito.cliente.id !== clienteId) {
+      throw new ForbiddenException('No eres el cliente de este depósito');
+    }
+
+    if (deposito.estado !== EscrowEstado.RETENIDO) {
+      throw new BadRequestException('El depósito ya no está retenido');
+    }
+
+    deposito.estado = EscrowEstado.LIBERADO;
+    deposito.liberadoEn = new Date();
+    await this.escrowRepository.save(deposito);
+
+    // Agregar logica de notificacion a freelancer mediante gmail
+
+    return deposito;
+  }
 }
