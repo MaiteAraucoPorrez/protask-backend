@@ -13,6 +13,7 @@ import { ProposalsModule } from './proposal/proposals.module';
 import { KycModule } from './kyc/kyc.module';
 import { EscrowModule } from './escrow/escrow.module';
 import { DeliveriesModule } from './deliveries/deliveries.module';
+import { DisputesModule } from './disputes/disputes.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { MilestonesModule } from './milestones/milestones.module';
 import { ChatModule } from './chat/chat.module';
@@ -59,6 +60,7 @@ import { ChatModule } from './chat/chat.module';
     KycModule,
     EscrowModule,
     DeliveriesModule,
+    DisputesModule,
     ReviewsModule,
     MilestonesModule,
     ChatModule,
