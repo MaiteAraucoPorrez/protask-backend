@@ -14,6 +14,8 @@ import { KycModule } from './kyc/kyc.module';
 import { EscrowModule } from './escrow/escrow.module';
 import { DeliveriesModule } from './deliveries/deliveries.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { MilestonesModule } from './milestones/milestones.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -58,6 +60,8 @@ import { ReviewsModule } from './reviews/reviews.module';
     EscrowModule,
     DeliveriesModule,
     ReviewsModule,
+    MilestonesModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [
