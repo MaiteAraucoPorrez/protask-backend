@@ -17,6 +17,7 @@ import { DisputesModule } from './disputes/disputes.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { MilestonesModule } from './milestones/milestones.module';
 import { ChatModule } from './chat/chat.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { ChatModule } from './chat/chat.module';
     ReviewsModule,
     MilestonesModule,
     ChatModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [
