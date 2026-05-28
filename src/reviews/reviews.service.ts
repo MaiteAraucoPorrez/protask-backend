@@ -183,7 +183,7 @@ export class ReviewsService {
       .createQueryBuilder('review')
       .select('AVG(review.rating)', 'avg')
       .addSelect('COUNT(review.id)', 'total')
-      .where('review.reviewed_id = :userId', { userId })
+      .where('review.reviewedId = :userId', { userId })
       .getRawOne<{ avg: string; total: string }>();
 
     const avg = parseFloat(result?.avg ?? '0');
