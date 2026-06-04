@@ -8,7 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, FindOptionsWhere } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import * as fs from 'fs'; //Importación nativa para manejar archivos físicos en el disco
+import * as fs from 'fs';
 import { User, UserRole, UserStatus } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -27,9 +27,6 @@ export class UsersService {
       private readonly usersRepository: Repository<User>,
   ) { }
 
-  // ─────────────────────────────────────────────────────────────
-  // GET ALL with filters + pagination
-  // ─────────────────────────────────────────────────────────────
   async findAll(
       query: UserQueryDto,
   ): Promise<ApiResponse<UserResponseDto[]>> {
@@ -54,14 +51,12 @@ export class UsersService {
 
     const queryBuilder = this.usersRepository.createQueryBuilder('user');
 
-    // Apply standard filters
     if (name) queryBuilder.andWhere('user.name ILIKE :name', { name: `%${name}%` });
     if (email) queryBuilder.andWhere('user.email ILIKE :email', { email: `%${email}%` });
     if (role) queryBuilder.andWhere('user.role = :role', { role });
     if (status) queryBuilder.andWhere('user.status = :status', { status });
     if (location) queryBuilder.andWhere('user.location ILIKE :location', { location: `%${location}%` });
 
-    // Skill filter for freelancers (searches in array column)
     if (skill) {
       queryBuilder.andWhere('user.skills LIKE :skill', { skill: `%${skill}%` });
     }
@@ -92,9 +87,6 @@ export class UsersService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // GET ONE by ID
-  // ─────────────────────────────────────────────────────────────
   async findOne(id: string): Promise<ApiResponse<UserResponseDto>> {
     const user = await this.findByIdOrFail(id);
     return ApiResponse.info(
@@ -103,9 +95,6 @@ export class UsersService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // GET freelancers only (public endpoint)
-  // ─────────────────────────────────────────────────────────────
   async findFreelancers(
       query: UserQueryDto,
   ): Promise<ApiResponse<UserResponseDto[]>> {
@@ -113,9 +102,6 @@ export class UsersService {
     return this.findAll(query);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // CREATE
-  // ─────────────────────────────────────────────────────────────
   async create(dto: CreateUserDto): Promise<ApiResponse<UserResponseDto>> {
     const existing = await this.usersRepository.findOneBy({ email: dto.email });
     if (existing) {
@@ -153,9 +139,6 @@ export class UsersService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // UPDATE
-  // ─────────────────────────────────────────────────────────────
   async update(
       id: string,
       dto: UpdateUserDto,
@@ -192,9 +175,6 @@ export class UsersService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // CHANGE PASSWORD
-  // ─────────────────────────────────────────────────────────────
   async changePassword(
       id: string,
       dto: ChangePasswordDto,
@@ -231,9 +211,6 @@ export class UsersService {
     return ApiResponse.success(null, 'Contraseña actualizada exitosamente');
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // DELETE (soft delete via status)
-  // ─────────────────────────────────────────────────────────────
   async remove(
       id: string,
       requesterRole: UserRole,
@@ -252,9 +229,6 @@ export class UsersService {
     return ApiResponse.success(null, 'Usuario desactivado exitosamente');
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // VERIFY USER (admin action)
-  // ─────────────────────────────────────────────────────────────
   async verify(
       id: string,
       requesterRole: UserRole,
@@ -283,9 +257,6 @@ export class UsersService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // ADD PORTFOLIO FILE (POST) - HU-F03
-  // ─────────────────────────────────────────────────────────────
   async addPortfolioFile(
       id: string,
       filePath: string,
@@ -308,9 +279,6 @@ export class UsersService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // UPDATE/REPLACE PORTFOLIO FILE (PUT) - HU-F07
-  // ─────────────────────────────────────────────────────────────
   async updatePortfolioFile(
       id: string,
       oldPath: string,
@@ -354,9 +322,6 @@ export class UsersService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // DELETE PORTFOLIO FILE (Opcional - Completar CRUD)
-  // ─────────────────────────────────────────────────────────────
   async deletePortfolioFile(
       id: string,
       filePath: string,
@@ -390,9 +355,6 @@ export class UsersService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Internal helpers
-  // ─────────────────────────────────────────────────────────────
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository
         .createQueryBuilder('user')

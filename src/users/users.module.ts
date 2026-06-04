@@ -13,8 +13,6 @@ import { RolesGuard } from '../common/guards/roles.guard';
 @Module({
     imports: [
         TypeOrmModule.forFeature([User]),
-        // Register JwtModule here directly (same config as AuthModule) to avoid
-        // circular dependency: AuthModule → UsersModule → AuthModule
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
@@ -23,7 +21,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
                 signOptions: { expiresIn: config.get('JWT_EXPIRES_IN') },
             }),
         }),
-        CacheModule.register(), // ← Agregar esta línea
+        CacheModule.register(),
     ],
     providers: [
         UsersService,

@@ -7,9 +7,6 @@ import {
   Index,
 } from 'typeorm';
 
-
-
-
 export enum UserRole {
   CLIENT = 'cliente',
   FREELANCER = 'freelancer',

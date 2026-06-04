@@ -28,7 +28,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly jwtService: JwtService,
   ) {}
 
-  // ─── Auth on connect ───────────────────────────────────────────────────────
   async handleConnection(client: Socket) {
     try {
       const token =
@@ -46,10 +45,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(client: Socket) {
-    // nothing to clean up — socket.io handles room cleanup automatically
   }
 
-  // ─── join_room ─────────────────────────────────────────────────────────────
   @SubscribeMessage('join_room')
   async handleJoinRoom(
     @ConnectedSocket() client: Socket,
@@ -72,7 +69,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.emit('room_joined', { roomId: data.roomId });
   }
 
-  // ─── send_message ──────────────────────────────────────────────────────────
   @SubscribeMessage('send_message')
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   async handleSendMessage(
@@ -88,7 +84,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         dto.content,
       );
 
-      // Broadcast to everyone in the room (including sender for confirmation)
       this.server.to(dto.roomId).emit('new_message', message);
     } catch (err: any) {
       client.emit('error', { message: err.message ?? 'Error al enviar mensaje' });

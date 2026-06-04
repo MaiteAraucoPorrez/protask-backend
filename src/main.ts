@@ -10,19 +10,14 @@ import compression from 'compression';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Compresión Gzip/Brotli para todas las respuestas
   app.use(compression());
 
-  // Serve uploaded KYC documents as static files at /uploads/...
   app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
-  // Security headers (X-Frame-Options, X-Content-Type-Options, etc.)
   app.use(helmet());
 
-  // Global prefix
   app.setGlobalPrefix('api');
 
-  // Global validation pipe (DTOs)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -34,10 +29,8 @@ async function bootstrap() {
     }),
   );
 
-  // Global exception filter
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // CORS
   app.enableCors({
     origin: process.env.CORS_ORIGIN ?? '*',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],

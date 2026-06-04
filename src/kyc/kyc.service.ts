@@ -18,7 +18,6 @@ type KycFiles = {
   selfieConDni?: Express.Multer.File[];
 };
 
-// Normalizes absolute multer path to a relative uploads/... path
 function toRelativePath(file: Express.Multer.File): string {
   const normalized = file.path.replace(/\\/g, '/');
   const idx = normalized.lastIndexOf('uploads/');
@@ -34,9 +33,6 @@ export class KycService {
     private readonly usersRepository: Repository<User>,
   ) {}
 
-  // ─────────────────────────────────────────────────────────────
-  // Freelancer envía documentos para verificación KYC
-  // ─────────────────────────────────────────────────────────────
   async enviarDocumentos(
     userId: string,
     files: KycFiles,
@@ -65,7 +61,6 @@ export class KycService {
     }
 
     if (kyc) {
-      // Reenvío: actualiza archivos y resetea estado a pendiente
       if (hasDniFrente) kyc.dniFrentePath = toRelativePath(files.dniFrente![0]);
       if (hasDniDorso) kyc.dniDorsoPath = toRelativePath(files.dniDorso![0]);
       if (hasSelfie) kyc.selfieConDniPath = toRelativePath(files.selfieConDni![0]);
@@ -92,9 +87,6 @@ export class KycService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Freelancer consulta su propio estado KYC
-  // ─────────────────────────────────────────────────────────────
   async miEstado(userId: string): Promise<ApiResponse<KycResponseDto | null>> {
     const kyc = await this.kycRepository.findOne({ where: { userId } });
     if (!kyc) {
@@ -103,9 +95,6 @@ export class KycService {
     return ApiResponse.info(new KycResponseDto(kyc), 'Estado KYC recuperado');
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Admin: lista todas las solicitudes KYC con paginación
-  // ─────────────────────────────────────────────────────────────
   async findAll(
     page: number,
     limit: number,
@@ -140,17 +129,11 @@ export class KycService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Admin: ver detalle de una solicitud KYC
-  // ─────────────────────────────────────────────────────────────
   async findOne(id: string): Promise<ApiResponse<KycResponseDto>> {
     const kyc = await this.findByIdOrFail(id);
     return ApiResponse.info(new KycResponseDto(kyc), 'Verificación KYC recuperada');
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Admin: aprobar verificación KYC
-  // ─────────────────────────────────────────────────────────────
   async aprobar(id: string, adminId: string): Promise<ApiResponse<KycResponseDto>> {
     const kyc = await this.findByIdOrFail(id);
 
@@ -165,7 +148,6 @@ export class KycService {
 
     const saved = await this.kycRepository.save(kyc);
 
-    // Marcar al usuario como verificado y activo
     await this.usersRepository.update(kyc.userId, {
       isVerified: true,
       verifiedAt: new Date(),
@@ -178,9 +160,6 @@ export class KycService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Admin: rechazar verificación KYC con motivo
-  // ─────────────────────────────────────────────────────────────
   async rechazar(
     id: string,
     adminId: string,
@@ -201,9 +180,6 @@ export class KycService {
     return ApiResponse.success(new KycResponseDto(saved), 'Verificación KYC rechazada');
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Helper interno
-  // ─────────────────────────────────────────────────────────────
   private async findByIdOrFail(id: string): Promise<KycVerification> {
     const kyc = await this.kycRepository.findOne({
       where: { id },

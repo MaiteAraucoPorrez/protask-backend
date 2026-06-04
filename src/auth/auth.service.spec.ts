@@ -65,7 +65,7 @@ describe('AuthService', () => {
       });
 
       expect(result.data).not.toHaveProperty('token');
-      expect(result.data.user).toMatchObject({ id: 'uuid-1', email: 'test@example.com' });
+      expect(result.data!.user).toMatchObject({ id: 'uuid-1', email: 'test@example.com' });
     });
   });
 
@@ -144,7 +144,7 @@ describe('AuthService', () => {
       const result = await service.login({ email: 'test@example.com', password: PASSWORD_PLAIN });
 
       expect(result.data).toHaveProperty('token', 'signed-token');
-      expect(result.data.user).toMatchObject({
+      expect(result.data!.user).toMatchObject({
         id: 'uuid-1',
         name: 'Test User',
         email: 'test@example.com',

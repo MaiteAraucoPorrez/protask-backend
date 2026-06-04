@@ -33,7 +33,6 @@ export class ChatService {
     private userRepo: Repository<User>,
   ) {}
 
-  // ─── Get or create room for an accepted proposal ──────────────────────────
   async getOrCreateRoom(
     proposalId: string,
     requesterId: string,
@@ -84,7 +83,6 @@ export class ChatService {
     );
   }
 
-  // ─── List all rooms for a user ─────────────────────────────────────────────
   async getUserRooms(userId: string): Promise<ApiResponse<RoomResponseDto[]>> {
     const rooms = await this.roomRepo
       .createQueryBuilder('room')
@@ -102,7 +100,6 @@ export class ChatService {
     );
   }
 
-  // ─── Get messages for a room (paginated) ──────────────────────────────────
   async getRoomMessages(
     roomId: string,
     userId: string,
@@ -135,7 +132,6 @@ export class ChatService {
     meta.hasNextPage = (query.page ?? 1) < meta.totalPages;
     meta.hasPreviousPage = (query.page ?? 1) > 1;
 
-    // Mark messages from the other user as read
     await this.messageRepo
       .createQueryBuilder()
       .update(ChatMessage)
@@ -153,7 +149,6 @@ export class ChatService {
     );
   }
 
-  // ─── Save a message (called by gateway) ───────────────────────────────────
   async saveMessage(
     roomId: string,
     senderId: string,
@@ -175,7 +170,6 @@ export class ChatService {
     const message = this.messageRepo.create({ room, sender, content });
     const saved = await this.messageRepo.save(message);
 
-    // Update last message cache on the room
     await this.roomRepo.update(roomId, {
       lastMessage: content.length > 80 ? content.substring(0, 80) + '…' : content,
       lastMessageAt: saved.createdAt,
@@ -184,7 +178,6 @@ export class ChatService {
     return new MessageResponseDto(saved);
   }
 
-  // ─── Verify a user is participant of a room ────────────────────────────────
   async isParticipant(roomId: string, userId: string): Promise<boolean> {
     const room = await this.roomRepo.findOne({
       where: { id: roomId },

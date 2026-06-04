@@ -10,10 +10,6 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-/**
- * Solo se permite editar un hito mientras esté en estado 'pendiente'.
- * proposalId no es editable (no se incluye aquí).
- */
 export class UpdateMilestoneDto {
   @IsString()
   @IsOptional()

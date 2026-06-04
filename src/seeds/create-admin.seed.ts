@@ -41,9 +41,9 @@ async function main() {
       isVerified: true,
     });
     await repo.save(admin);
-    console.log('✔ Admin creado exitosamente');
-    console.log(`   Email:    ${email}`);
-    console.log(`   Password: Admin1234`);
+    console.log(' Admin creado exitosamente');
+    console.log(` Email:    ${email}`);
+    console.log(` Password: Admin1234`);
   }
 
   await AppDataSource.destroy();

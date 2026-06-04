@@ -56,6 +56,7 @@ export class EscrowService {
       freelancer: proposal.freelancer,
       monto: proposal.offeredPrice,
       estado: EscrowEstado.RETENIDO,
+      tipoPago: dto.tipoPago,
     });
 
     return this.escrowRepository.save(deposito);
@@ -150,8 +151,6 @@ export class EscrowService {
     deposito.estado = EscrowEstado.LIBERADO;
     deposito.liberadoEn = new Date();
     await this.escrowRepository.save(deposito);
-
-    // Agregar logica de notificacion a freelancer mediante gmail
 
     return deposito;
   }

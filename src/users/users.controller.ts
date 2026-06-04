@@ -13,18 +13,14 @@ import {
     HttpStatus,
     ParseUUIDPipe,
     Req,
-    /////////////////
     UseInterceptors,
     UploadedFile,
     BadRequestException,
-    ////////////////
 } from '@nestjs/common';
-///////////////////////////////////////////////////
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Request } from 'express';
-///////////////////////////////////////////////////
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -39,10 +35,6 @@ import { CacheInterceptor } from '@nestjs/cache-manager';
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
 
-    // ─────────────────────────────────────────────────────────────
-    // GET /users  →  List all users (admin only)
-    // GET /users?name=&email=&role=&status=&page=&limit=
-    // ─────────────────────────────────────────────────────────────
     @Get()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
@@ -50,19 +42,12 @@ export class UsersController {
         return this.usersService.findAll(query);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // GET /users/freelancers  →  Public: list freelancers
-    // GET /users/freelancers?skill=&location=&page=&limit=
-    // ─────────────────────────────────────────────────────────────
     @Get('freelancers')
     @UseInterceptors(CacheInterceptor)
     findFreelancers(@Query() query: UserQueryDto) {
     return this.usersService.findFreelancers(query);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // GET /users/me  →  Get own profile
-    // ─────────────────────────────────────────────────────────────
     @Get('me')
     @UseGuards(JwtAuthGuard)
     getProfile(@Req() req: Request) {
@@ -70,18 +55,12 @@ export class UsersController {
         return this.usersService.findOne(user.sub);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // GET /users/:id  →  Get user by ID (auth required)
-    // ─────────────────────────────────────────────────────────────
     @Get(':id')
     @UseGuards(JwtAuthGuard)
     findOne(@Param('id', ParseUUIDPipe) id: string) {
         return this.usersService.findOne(id);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // POST /users  →  Create user (admin only; normal users register via /auth/register)
-    // ─────────────────────────────────────────────────────────────
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
@@ -90,9 +69,6 @@ export class UsersController {
         return this.usersService.create(dto);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // PUT /users/:id  →  Update user profile
-    // ─────────────────────────────────────────────────────────────
     @Put(':id')
     @UseGuards(JwtAuthGuard)
     update(
@@ -108,7 +84,7 @@ export class UsersController {
             requester.role as UserRole,
         );
     }
-    ///////////////////////////////////
+
     @Post(':id/portfolio')
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(
@@ -137,7 +113,6 @@ export class UsersController {
         return this.usersService.addPortfolioFile(id, file.path, requester.id);
     }
 
-    //Put/Patch HISTORIA USUARIO 07
 
     @Put(':id/portfolio')
     @UseGuards(JwtAuthGuard)
@@ -171,10 +146,7 @@ export class UsersController {
 
         return this.usersService.updatePortfolioFile(id, oldFilePath, file.path, requester.id);
     }
-    ///////////////////////////////////////////////////////////////
-    // ─────────────────────────────────────────────────────────────
-    // PATCH /users/:id/password  →  Change password
-    // ─────────────────────────────────────────────────────────────
+
     @Patch(':id/password')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
@@ -187,9 +159,6 @@ export class UsersController {
         return this.usersService.changePassword(id, dto, requester.id);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // PATCH /users/:id/verify  →  Verify user (admin only)
-    // ─────────────────────────────────────────────────────────────
     @Patch(':id/verify')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
@@ -198,9 +167,6 @@ export class UsersController {
         return this.usersService.verify(id, requester.role as UserRole);
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // DELETE /users/:id  →  Deactivate user (admin only)
-    // ─────────────────────────────────────────────────────────────
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.ADMIN)
@@ -223,8 +189,4 @@ export class UsersController {
     const requester = (req as any).user;
     return this.usersService.deletePortfolioFile(id, filePath, requester.id);
 }
-
-
-
-
 }
