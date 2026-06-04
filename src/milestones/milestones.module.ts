@@ -11,12 +11,12 @@ import { AuthModule } from '../auth/auth.module';
   imports: [
     TypeOrmModule.forFeature([
       Milestone,
-      Proposal,   // necesario para validar propuesta aceptada y roles
+      Proposal,
     ]),
-    AuthModule,   // provee JwtModule → JwtService requerido por JwtAuthGuard
+    AuthModule,
   ],
   controllers: [MilestonesController],
   providers: [MilestonesService],
-  exports: [MilestonesService], // disponible si otros módulos lo necesitan
+  exports: [MilestonesService],
 })
 export class MilestonesModule {}

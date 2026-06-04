@@ -47,10 +47,6 @@ const kycDiskStorage = diskStorage({
 export class KycController {
   constructor(private readonly kycService: KycService) {}
 
-  // ─────────────────────────────────────────────────────────────
-  // POST /kyc/enviar  →  Freelancer envía documentos KYC
-  // Acepta multipart/form-data con campos: dniFrente, dniDorso, selfieConDni
-  // ─────────────────────────────────────────────────────────────
   @Post('enviar')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.FREELANCER)
@@ -106,9 +102,6 @@ enviarDocumentos(
     return this.kycService.enviarDocumentos(user.sub, files ?? {});
 }
 
-  // ─────────────────────────────────────────────────────────────
-  // GET /kyc/mi-estado  →  Freelancer consulta su estado KYC
-  // ─────────────────────────────────────────────────────────────
   @Get('mi-estado')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.FREELANCER)
@@ -117,10 +110,6 @@ enviarDocumentos(
     return this.kycService.miEstado(user.sub);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // GET /kyc  →  Admin: lista todas las solicitudes KYC
-  // GET /kyc?status=pendiente&page=1&limit=10
-  // ─────────────────────────────────────────────────────────────
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -132,9 +121,6 @@ enviarDocumentos(
     return this.kycService.findAll(+page, +limit, status);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // GET /kyc/:id  →  Admin: ver detalle de una solicitud KYC
-  // ─────────────────────────────────────────────────────────────
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -142,9 +128,6 @@ enviarDocumentos(
     return this.kycService.findOne(id);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // PATCH /kyc/:id/aprobar  →  Admin: aprobar verificación KYC
-  // ─────────────────────────────────────────────────────────────
   @Patch(':id/aprobar')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -153,10 +136,6 @@ enviarDocumentos(
     return this.kycService.aprobar(id, admin.sub);
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // PATCH /kyc/:id/rechazar  →  Admin: rechazar verificación KYC
-  // Body: { "motivoRechazo": "texto del motivo" }
-  // ─────────────────────────────────────────────────────────────
   @Patch(':id/rechazar')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

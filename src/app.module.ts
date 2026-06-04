@@ -21,23 +21,18 @@ import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
-    // ── Config ──────────────────────────────────────────────────
     ConfigModule.forRoot({ 
       isGlobal: true,
       envFilePath: '.env',
     }),
-
-    // ── Rate limiting (60 peticiones por minuto por IP) ───────────
     ThrottlerModule.forRoot([{ ttl: 60, limit: 60 }]),
 
-    // ── Cache (en memoria) ───────────────────────────────────────
     CacheModule.register({
       ttl: 60000,
       max: 100,
       isGlobal: true,
     }),
 
-    // ── Database ─────────────────────────────────────────────────
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],  
       useFactory: (config: ConfigService) => ({
@@ -53,7 +48,6 @@ import { ReportsModule } from './reports/reports.module';
       }),
     }),
 
-    // ── Feature Modules ──────────────────────────────────────────
     AuthModule,
     UsersModule,
     ProjectsModule,

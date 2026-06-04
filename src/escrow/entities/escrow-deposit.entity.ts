@@ -18,6 +18,12 @@ export enum EscrowEstado {
   REEMBOLSADO = 'reembolsado',
 }
 
+export enum ProjectTipoPago {
+  TARJETA_CREDITO = 'tarjeta_credito',
+  QR = 'qr',
+  TRANSFERENCIA_BANCARIA = 'transferencia_bancaria',
+}
+
 @Entity('escrow_deposits')
 export class EscrowDeposit {
   @PrimaryGeneratedColumn('uuid')
@@ -42,6 +48,10 @@ export class EscrowDeposit {
   @Column({ type: 'enum', enum: EscrowEstado, default: EscrowEstado.RETENIDO })
   @Index()
   estado!: EscrowEstado;
+
+  @Column({ type: 'enum', enum: ProjectTipoPago, nullable: true })
+  @Index()
+  tipoPago!: ProjectTipoPago;
 
   @Column({ nullable: true })
   liberadoEn?: Date;

@@ -39,7 +39,6 @@ export class ReviewsService {
     dto: CreateReviewDto,
     reviewerId: string,
   ): Promise<ApiResponse<ReviewResponseDto>> {
-    // 1. Obtener la propuesta con sus relaciones relevantes
     const proposal = await this.proposalRepository.findOne({
       where: { id: dto.proposalId },
       relations: ['project', 'project.client', 'freelancer'],
@@ -51,8 +50,6 @@ export class ReviewsService {
 
     const clientId = proposal.project.client.id;
     const freelancerId = proposal.freelancer.id;
-
-    // 2. Verificar que quien reseña es parte del contrato
     const isClient = reviewerId === clientId;
     const isFreelancer = reviewerId === freelancerId;
 
@@ -62,14 +59,12 @@ export class ReviewsService {
       );
     }
 
-    // 3. Verificar que la propuesta fue aceptada
     if (proposal.status !== 'accepted') {
       throw new BadRequestException(
         'Solo se puede calificar en proyectos con propuesta aceptada',
       );
     }
 
-    // 4. Verificar que existe una entrega aprobada (proyecto completado)
     const approvedDelivery = await this.deliveryRepository.findOne({
       where: {
         proposal: { id: dto.proposalId },
@@ -83,7 +78,6 @@ export class ReviewsService {
       );
     }
 
-    // 5. Verificar que no existe ya una reseña de este usuario para esta propuesta
     const existing = await this.reviewRepository.findOne({
       where: {
         proposal: { id: dto.proposalId },
@@ -97,12 +91,10 @@ export class ReviewsService {
       );
     }
 
-    // 6. Determinar quién es el reseñado y el rol del reseñador
     const reviewer = isClient ? proposal.project.client : proposal.freelancer;
     const reviewed = isClient ? proposal.freelancer : proposal.project.client;
     const reviewerRole = isClient ? ReviewerRole.CLIENT : ReviewerRole.FREELANCER;
 
-    // 7. Guardar la reseña
     const review = this.reviewRepository.create({
       proposal,
       reviewer,
@@ -114,10 +106,8 @@ export class ReviewsService {
 
     const saved = await this.reviewRepository.save(review);
 
-    // 8. Actualizar el rating promedio del usuario reseñado
     await this.recalcUserRating(reviewed.id);
 
-    // Cargar con relaciones para la respuesta
     const full = await this.reviewRepository.findOne({
       where: { id: saved.id },
       relations: ['proposal', 'reviewer', 'reviewed'],
@@ -131,9 +121,6 @@ export class ReviewsService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Listar reseñas recibidas por un usuario
-  // ─────────────────────────────────────────────────────────────
   async findByUser(userId: string): Promise<ApiResponse<ReviewResponseDto[]>> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
@@ -152,9 +139,6 @@ export class ReviewsService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Listar reseñas de una propuesta (proyecto)
-  // ─────────────────────────────────────────────────────────────
   async findByProposal(proposalId: string): Promise<ApiResponse<ReviewResponseDto[]>> {
     const proposal = await this.proposalRepository.findOne({
       where: { id: proposalId },
@@ -175,9 +159,6 @@ export class ReviewsService {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Recalcular rating promedio del usuario reseñado
-  // ─────────────────────────────────────────────────────────────
   private async recalcUserRating(userId: string): Promise<void> {
     const result = await this.reviewRepository
       .createQueryBuilder('review')

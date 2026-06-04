@@ -15,7 +15,6 @@ export class AuthController {
     return this.authService.register(dto);
   }
 
-  // Máximo 5 intentos por minuto por IP para evitar fuerza bruta
   @Throttle({ default: { ttl: 60, limit: 5 } })
   @Post('login')
   login(@Body() dto: LoginDto) {

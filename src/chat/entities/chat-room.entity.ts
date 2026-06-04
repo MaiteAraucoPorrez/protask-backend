@@ -17,7 +17,6 @@ export class ChatRoom {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  /** One room per accepted proposal */
   @OneToOne(() => Proposal)
   @JoinColumn()
   @Index({ unique: true })
@@ -31,7 +30,6 @@ export class ChatRoom {
   @Index()
   freelancer!: User;
 
-  /** Cached preview for room list */
   @Column({ type: 'text', nullable: true })
   lastMessage?: string;
 
