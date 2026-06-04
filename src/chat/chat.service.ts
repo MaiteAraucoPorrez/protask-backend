@@ -140,7 +140,7 @@ export class ChatService {
       .createQueryBuilder()
       .update(ChatMessage)
       .set({ isRead: true })
-      .where('room_id = :roomId AND sender_id != :userId AND is_read = false', {
+      .where('"roomId" = :roomId AND "senderId" != :userId AND "isRead" = false', {
         roomId,
         userId,
       })

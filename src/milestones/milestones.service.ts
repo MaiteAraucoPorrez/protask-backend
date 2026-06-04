@@ -101,7 +101,7 @@ export class MilestonesService {
     const existingSum = await this.milestoneRepository
       .createQueryBuilder('m')
       .select('COALESCE(SUM(m.amount), 0)', 'total')
-      .where('m.proposal_id = :proposalId', { proposalId: dto.proposalId })
+      .where('m.proposal = :proposalId', { proposalId: dto.proposalId })
       .getRawOne<{ total: string }>();
 
     const currentTotal = parseFloat(existingSum?.total ?? '0');
@@ -227,7 +227,7 @@ export class MilestonesService {
       const existingSum = await this.milestoneRepository
         .createQueryBuilder('m')
         .select('COALESCE(SUM(m.amount), 0)', 'total')
-        .where('m.proposal_id = :proposalId', { proposalId: milestone.proposal.id })
+        .where('m.proposal = :proposalId', { proposalId: milestone.proposal.id })
         .andWhere('m.id != :milestoneId', { milestoneId: id })
         .getRawOne<{ total: string }>();
 
@@ -315,7 +315,7 @@ export class MilestonesService {
     // Verificar que no hay hitos pendientes con menor orden (trabajo secuencial)
     const previousPending = await this.milestoneRepository
       .createQueryBuilder('m')
-      .where('m.proposal_id = :proposalId', { proposalId: milestone.proposal.id })
+      .where('m.proposal = :proposalId', { proposalId: milestone.proposal.id })
       .andWhere('m.status = :status', { status: MilestoneStatus.PENDIENTE })
       .andWhere('m.order < :order', { order: milestone.order })
       .andWhere('m.id != :id', { id: milestone.id })
