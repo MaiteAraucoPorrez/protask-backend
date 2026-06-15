@@ -39,4 +39,11 @@ export class ProjectsController {
     const user = (req as any).user;
     return this.projectsService.remove(id, user.sub);
   }
+
+  @Patch(':id/cancelar')
+  cancel(@Param('id') id: string, @Req() req: Request) {
+    const user = (req as any).user;
+    return this.projectsService.cancel(id, user.sub);
+  }
+  
 }
