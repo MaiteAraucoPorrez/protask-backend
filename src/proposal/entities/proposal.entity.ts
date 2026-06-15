@@ -2,6 +2,13 @@ import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, Up
 import { Project } from '../../projects/entities/project.entity';
 import { User } from '../../users/entities/user.entity';
 
+export enum ExperienceLevel {
+  JUNIOR = 'junior',
+  MID = 'mid',
+  SENIOR = 'senior',
+}
+
+
 @Entity('proposals')
 export class Proposal {
   @PrimaryGeneratedColumn('uuid')
@@ -15,6 +22,17 @@ export class Proposal {
 
   @Column('text')
   description!: string;
+
+  @Column({
+  type: 'enum',
+  enum: ExperienceLevel,
+  })
+  experienceLevel!: ExperienceLevel;
+
+
+  @Column('text')
+  jobDescription!: string; 
+
 
   @Column({ default: 'pending' })
   @Index() 
