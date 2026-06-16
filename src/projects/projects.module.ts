@@ -10,7 +10,7 @@ import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Project, User]),
+    TypeOrmModule.forFeature([Project, User, Proposal]),
     CacheModule.register(),  
     AuthModule,
   ],

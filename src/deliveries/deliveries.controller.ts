@@ -22,7 +22,14 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '../common/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
 
-const ALLOWED_MIME = ['image/jpeg', 'image/png', 'application/pdf', 'application/zip'];
+const ALLOWED_MIME = [
+  'image/jpeg',
+  'image/png',
+  'application/pdf',
+  'application/zip',
+  'application/x-zip-compressed',
+  'application/octet-stream',
+];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 const deliveryDiskStorage = diskStorage({
@@ -50,12 +57,19 @@ export class DeliveriesController {
     FileFieldsInterceptor([{ name: 'files', maxCount: 10 }], {
       storage: deliveryDiskStorage,
       fileFilter: (_req, file, cb) => {
-        if (!ALLOWED_MIME.includes(file.mimetype)) {
+        const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.zip'];
+        const fileExtension = extname(file.originalname).toLowerCase();
+
+        const validMime = ALLOWED_MIME.includes(file.mimetype);
+        const validExtension = allowedExtensions.includes(fileExtension);
+
+        if (!validMime && !validExtension) {
           return cb(
-            new BadRequestException('Tipo de archivo no permitido'),
-            false,
+              new BadRequestException('Tipo de archivo no permitido'),
+              false,
           );
         }
+
         cb(null, true);
       },
       limits: { fileSize: MAX_FILE_SIZE },
