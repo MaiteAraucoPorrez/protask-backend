@@ -108,7 +108,7 @@ export class ProposalsService {
   async findOne(id: string): Promise<Proposal> {
     const proposal = await this.proposalRepository.findOne({
       where: { id },
-      relations: ['project', 'freelancer'],
+      relations: ['project', 'project.client', 'freelancer'],
     });
     if (!proposal) {
       throw new NotFoundException('Propuesta no encontrada');

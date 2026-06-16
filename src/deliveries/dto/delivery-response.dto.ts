@@ -16,8 +16,22 @@ export class DeliveryFileResponseDto {
     this.originalName = file.originalName;
     this.mimeType = file.mimeType;
     this.size = file.size;
-    this.url = `/uploads/deliveries/${file.filename}`;
+    this.url = this.buildFileUrl(file);
     this.uploadedAt = file.uploadedAt;
+  }
+  private buildFileUrl(file: DeliveryFile): string {
+    if (!file.path) {
+      return `/uploads/deliveries/${file.filename}`;
+    }
+
+    const normalizedPath = file.path.replace(/\\/g, '/');
+    const uploadsIndex = normalizedPath.indexOf('uploads/');
+
+    if (uploadsIndex === -1) {
+      return `/uploads/deliveries/${file.filename}`;
+    }
+
+    return `/${normalizedPath.substring(uploadsIndex)}`;
   }
 }
 
@@ -43,7 +57,7 @@ export class DeliveryResponseDto {
     this.proposalId = delivery.proposal.id;
     this.freelancerId = delivery.freelancer.id;
     this.freelancerName = delivery.freelancer.name;
-    this.files = delivery.files?.map(f => new DeliveryFileResponseDto(f)) || [];
+    this.files = delivery.files?.map((f) => new DeliveryFileResponseDto(f)) || [];
     this.createdAt = delivery.createdAt;
     this.updatedAt = delivery.updatedAt;
   }

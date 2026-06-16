@@ -6,6 +6,7 @@ import { Delivery, DeliveryStatus } from './entities/delivery.entity';
 import { CreateDeliveryDto } from './dto/create-delivery.dto';
 import { UpdateDeliveryDto } from './dto/update-delivery.dto';
 import { Proposal } from '../proposal/entities/proposal.entity';
+import { Project } from '../projects/entities/project.entity';
 import { User } from '../users/entities/user.entity';
 import { ApiResponse } from '../common/dto/api-response.dto';
 import { DeliveryResponseDto } from './dto/delivery-response.dto';
@@ -24,11 +25,10 @@ export class DeliveriesService {
     private proposalRepository: Repository<Proposal>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Project)
+    private projectRepository: Repository<Project>,
     private readonly escrowService: EscrowService,
   ) {}
-
-
-
   async create(
     createDto: CreateDeliveryDto,
     files: Express.Multer.File[],
@@ -127,7 +127,7 @@ export class DeliveriesService {
   async approve(id: string, clientId: string): Promise<ApiResponse<DeliveryResponseDto>> {
   const delivery = await this.deliveryRepository.findOne({
     where: { id },
-    relations: ['proposal', 'proposal.project.client', 'freelancer', 'files'],
+    relations: ['proposal','proposal.project', 'proposal.project.client', 'freelancer', 'files'],
   });
 
   if (!delivery) {
@@ -148,6 +148,8 @@ export class DeliveriesService {
 
   // Actualizar estado de la entrega
   delivery.status = DeliveryStatus.APPROVED;
+    delivery.proposal.project.status = 'completed';
+    await this.projectRepository.save(delivery.proposal.project);
   const updated = await this.deliveryRepository.save(delivery);
 
   return ApiResponse.success(

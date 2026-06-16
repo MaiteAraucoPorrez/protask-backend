@@ -45,5 +45,5 @@ export class ProjectsController {
     const user = (req as any).user;
     return this.projectsService.cancel(id, user.sub);
   }
-  
+
 }
